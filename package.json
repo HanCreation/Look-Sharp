@@ -1,0 +1,44 @@
+{
+  "name": "look-sharp",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "db:seed": "node scripts/dev-seed.mjs",
+    "db:reset": "node scripts/dev-reset.mjs",
+    "db:seed:pg": "node scripts/pg-seed.mjs",
+    "postinstall": "prisma generate",
+    "prisma:generate": "prisma generate",
+    "prisma:studio": "prisma studio",
+    "prisma:push": "prisma db push"
+  },
+  "engines": {
+    "node": ">=18.18.0"
+  },
+  "dependencies": {
+    "@google/genai": "^1.17.0",
+    "@prisma/client": "^6.15.0",
+    "@vercel/blob": "^0.23.0",
+    "better-sqlite3": "^9.6.0",
+    "mime": "^3.0.0",
+    "next": "^14.2.6",
+    "pg": "^8.11.5",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.11",
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.4.41",
+    "prisma": "^6.15.0",
+    "tailwindcss": "^3.4.10",
+    "typescript": "^5.5.3"
+  }
+}

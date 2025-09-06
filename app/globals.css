@@ -1,0 +1,56 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Optional light styling baseline */
+html, body, :root { height: 100%; }
+body { @apply bg-gray-50 text-gray-900 antialiased; }
+
+/* LookSharp custom loader */
+@keyframes ls-bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8%); }
+}
+@keyframes ls-shine {
+  0% { mask-position: 150%; }
+  100% { mask-position: -50%; }
+}
+.ls-loader {
+  position: relative;
+  width: 96px;
+  height: 48px;
+}
+.ls-ring {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 4px solid rgba(33, 113, 212, 0.2);
+  box-shadow: inset 0 0 0 4px rgba(33,113,212,0.25);
+  background: linear-gradient(135deg, rgba(33,113,212,0.15), rgba(33,113,212,0.35));
+  animation: ls-bounce 1.2s ease-in-out infinite;
+}
+.ls-ring.left { left: 0; }
+.ls-ring.right { right: 0; animation-delay: 0.15s; }
+.ls-bridge {
+  position: absolute;
+  left: 44px;
+  top: 22px;
+  width: 8px;
+  height: 4px;
+  border-radius: 3px;
+  background: #2171D4;
+}
+.ls-shine {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(115deg, transparent 40%, rgba(255,255,255,0.8) 50%, transparent 60%);
+  -webkit-mask: radial-gradient(circle at 30% 30%, black 30%, transparent 31%) left center / 48px 48px no-repeat,
+                 radial-gradient(circle at 30% 30%, black 30%, transparent 31%) right center / 48px 48px no-repeat;
+  mask: radial-gradient(circle at 30% 30%, black 30%, transparent 31%) left center / 48px 48px no-repeat,
+        radial-gradient(circle at 30% 30%, black 30%, transparent 31%) right center / 48px 48px no-repeat;
+  animation: ls-shine 1.4s linear infinite;
+}
+

@@ -1,0 +1,64 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Glasses {
+  id              String       @id @db.Uuid @map("id")
+  sku             String       @unique
+  name            String
+  brand           String
+  style           String?      @db.Text
+  shape           String?      @db.Text
+  glassesShape    String?      @map("glasses_shape") @db.Text
+  color           String?      @db.Text
+  frameWidthMm    Int?         @map("frame_width_mm")
+  lensHeightMm    Int?         @map("lens_height_mm")
+  priceCents      Int?         @map("price_cents")
+  tags            String[]        @default([])
+  createdAt       DateTime     @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime     @map("updated_at") @db.Timestamptz(6)
+
+  assets          MediaAsset[]
+  leads           Lead[]
+
+  @@map("glasses")
+}
+
+model MediaAsset {
+  id         String   @id @db.Uuid
+  glassesId  String   @map("glasses_id") @db.Uuid
+  type       String   @db.Text
+  storageKey String?  @map("storage_key") @db.Text
+  cdnUrl     String?  @map("cdn_url") @db.Text
+  mime       String?  @db.Text
+  width      Int?
+  height     Int?
+  durationMs Int?     @map("duration_ms")
+  checksum   String?  @db.Text
+  altText    String?  @map("alt_text") @db.Text
+  sortOrder  Int?     @map("sort_order") @default(0)
+  createdAt  DateTime @map("created_at") @db.Timestamptz(6)
+
+  glasses    Glasses  @relation(fields: [glassesId], references: [id])
+
+  @@index([glassesId], map: "idx_media_assets_glasses_id")
+  @@map("media_assets")
+}
+
+model Lead {
+  id         String   @id @db.Uuid
+  email      String
+  glassesId  String   @map("glasses_id") @db.Uuid
+  note       String?  @db.Text
+  createdAt  DateTime @map("created_at") @db.Timestamptz(6)
+
+  glasses    Glasses  @relation(fields: [glassesId], references: [id])
+
+  @@map("leads")
+}
+
