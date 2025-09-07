@@ -196,9 +196,6 @@ export default function TryOnsPage() {
                     <Link href={`/glasses/${lightboxItem.glassesId}`} className="text-brand hover:underline">
                       View product details
                     </Link>
-                    {typeof lightboxItem.price_cents === 'number' && (
-                      <div className="text-sm font-medium text-gray-900">${(lightboxItem.price_cents / 100).toFixed(2)}</div>
-                    )}
                   </div>
                 )}
               </div>

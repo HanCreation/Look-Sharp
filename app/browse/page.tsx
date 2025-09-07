@@ -17,7 +17,8 @@ type Glasses = {
   style: string | null;
   shape: string | null;
   color: string | null;
-  price_cents: number | null;
+  sex: string | null;
+  tags: string[] | null;
   cover_cdn_url: string | null;
 };
 
@@ -131,48 +132,43 @@ export default async function Browse({ searchParams }: { readonly searchParams: 
                 key={g.id}
                 className="group overflow-hidden rounded-2xl border border-gray-100 bg-white/70 shadow-sm ring-1 ring-gray-200/60 backdrop-blur transition hover:shadow-md hover:ring-gray-300"
               >
-                <div className="relative aspect-[4/3] w-full bg-gray-100">
+                <div className="relative aspect-[4/3] w-full bg-gray-50">
                   {g.cover_cdn_url ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
                       src={g.cover_cdn_url}
                       alt=""
-                      className="h-full w-full object-cover transition-transform duration-300 will-change-transform group-hover:scale-[1.03]"
+                      className="h-full w-full object-contain p-4 transition-transform duration-300 will-change-transform"
                     />
                   ) : (
                     <div className="flex h-full w-full items-center justify-center text-gray-400">No image</div>
                   )}
-                  <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/5 via-black/0 to-black/0 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
                 </div>
                 <div className="p-4">
-                  <div className="mb-1 flex items-center justify-between">
-                    <div className="text-sm font-medium text-brand">{g.brand}</div>
-                    {g.price_cents != null && (
-                      <span className="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-semibold text-gray-900">
-                        ${((g.price_cents || 0) / 100).toFixed(2)}
-                      </span>
-                    )}
-                  </div>
+                  <div className="mb-1 text-sm font-medium text-brand">{g.brand}</div>
                   <h3 className="truncate text-lg font-semibold text-gray-900">{g.name}</h3>
-                  <div className="mt-1 text-sm text-gray-600">{g.shape || '—'}</div>
-                  <div className="mt-4 flex items-center justify-between">
-                    <Link href={`/glasses/${g.id}`} className="text-sm font-medium text-brand transition hover:underline">
-                      View details
-                    </Link>
+                  <div className="mt-1 flex items-center gap-2 text-sm text-gray-600">
+                    <span className="truncate">{g.shape || '—'}</span>
+                    {g.sex && <span className="text-gray-500">• {g.sex}</span>}
+                    {(() => {
+                      const tags = (g.tags || []).map(t => t.toLowerCase());
+                      const isSun = tags.some(t => t.includes('sunglass') || t === 'sun');
+                      const isOptical = tags.some(t => t.includes('eyeglass') || t.includes('optical'));
+                      const label = isSun ? 'sunglasses' : (isOptical ? 'eyeglasses' : null);
+                      return label ? <span className="text-gray-500">• {label}</span> : null;
+                    })()}
+                  </div>
+                  <div className="mt-4 flex items-center justify-end">
                     <Link
                       href={`/glasses/${g.id}#tryon`}
-                      className="inline-flex items-center gap-2 rounded-full bg-brand px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-brand/90 hover:shadow-md"
+                      className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-brand text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-brand/90 hover:shadow-md"
+                      aria-label="Try on"
+                      title="Try on"
                     >
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        viewBox="0 0 20 20"
-                        fill="currentColor"
-                        className="h-4 w-4"
-                        aria-hidden="true"
-                      >
-                        <path d="M10 2c-2.21 0-4 1.79-4 4v2H4a2 2 0 00-2 2v3a3 3 0 003 3h10a3 3 0 003-3v-3a2 2 0 00-2-2h-2V6c0-2.21-1.79-4-4-4zm-2 6V6a2 2 0 114 0v2H8z" />
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-5 w-5">
+                        <path d="M12 5c-7 0-10 7-10 7s3 7 10 7 10-7 10-7-3-7-10-7zm0 11a4 4 0 110-8 4 4 0 010 8z" />
                       </svg>
-                      <span>Try on</span>
+                      <span className="sr-only">Try on</span>
                     </Link>
                   </div>
                 </div>

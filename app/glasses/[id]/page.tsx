@@ -1,9 +1,9 @@
 import TryOnPanel from './TryOnPanel';
 import Link from 'next/link';
-import LeadForm from './LeadForm';
 import { getRepo } from '@/lib/repo';
+import type { MediaAsset } from '@/lib/repo';
 
-type PageProps = { params: { id: string } };
+type PageProps = { readonly params: { readonly id: string } };
 
 async function getData(id: string) {
   const repo = await getRepo();
@@ -27,20 +27,25 @@ export default async function GlassesDetail({ params }: PageProps) {
   }
 
   const { glasses, assets } = data;
-  const gallery = assets.filter((a) => a.cdn_url && (a.type === 'gallery_image' || a.type === 'reference'));
+  function isDisplayAsset(a: MediaAsset): a is MediaAsset & { cdn_url: string } {
+    return Boolean(a.cdn_url) && (a.type === 'gallery_image' || a.type === 'reference');
+  }
+  const gallery = (assets as MediaAsset[]).filter(isDisplayAsset);
   const cover = gallery[0];
   const thumbs = gallery.slice(1, 6);
   const shape = glasses.shape || glasses.glasses_shape;
 
-  const specs: Array<{ label: string; value: string | number } | null> = [
-    { label: 'SKU', value: glasses.sku },
-    shape ? { label: 'Shape', value: shape } : null,
-    glasses.style ? { label: 'Style', value: glasses.style } : null,
-    glasses.color ? { label: 'Color', value: glasses.color } : null,
-    glasses.sex ? { label: 'Sex', value: String(glasses.sex) } : null,
-    glasses.frame_width_mm != null ? { label: 'Frame width', value: `${glasses.frame_width_mm} mm` } : null,
-    glasses.lens_height_mm != null ? { label: 'Lens height', value: `${glasses.lens_height_mm} mm` } : null,
-  ].filter(Boolean) as Array<{ label: string; value: string | number }>;
+  const specs = (
+    [
+      { label: 'SKU', value: glasses.sku },
+      shape ? { label: 'Shape', value: shape } : null,
+      glasses.style ? { label: 'Style', value: glasses.style } : null,
+      glasses.color ? { label: 'Color', value: glasses.color } : null,
+      glasses.sex ? { label: 'Sex', value: String(glasses.sex) } : null,
+      glasses.frame_width_mm != null ? { label: 'Frame width', value: `${glasses.frame_width_mm} mm` } : null,
+      glasses.lens_height_mm != null ? { label: 'Lens height', value: `${glasses.lens_height_mm} mm` } : null,
+    ] as Array<{ label: string; value: string | number } | null>
+  ).filter((s): s is { label: string; value: string | number } => Boolean(s));
 
   return (
     <section className="bg-white py-8 md:py-12">
@@ -59,9 +64,7 @@ export default async function GlassesDetail({ params }: PageProps) {
             <div className="mb-2 text-sm font-medium text-brand">{glasses.brand}</div>
             <h1 className="text-3xl font-bold tracking-tight text-gray-900">{glasses.name}</h1>
             <div className="mt-2 text-sm text-gray-600">{shape || '—'} • {glasses.color || '—'}</div>
-            {glasses.price_cents != null && (
-              <div className="mt-3 text-2xl font-semibold text-gray-900">${(glasses.price_cents / 100).toFixed(2)}</div>
-            )}
+            {/* Price intentionally hidden on frontend */}
 
             {/* Gallery */}
             <div className="mt-6">
@@ -70,18 +73,18 @@ export default async function GlassesDetail({ params }: PageProps) {
                   {cover && (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
-                      src={cover.cdn_url!}
+                      src={cover.cdn_url}
                       alt={cover.alt_text || ''}
                       className="aspect-[4/3] w-full rounded-2xl bg-gray-100 object-contain shadow-sm"
                     />
                   )}
                   {thumbs.length > 0 && (
                     <div className="grid grid-cols-3 gap-3 md:grid-cols-4">
-                      {thumbs.map((a) => (
+                      {thumbs.map((a: MediaAsset & { cdn_url: string }) => (
                         // eslint-disable-next-line @next/next/no-img-element
                         <img
                           key={a.id}
-                          src={a.cdn_url!}
+                          src={a.cdn_url}
                           alt={a.alt_text || ''}
                           className="aspect-square w-full rounded-xl object-cover"
                         />
@@ -131,7 +134,6 @@ export default async function GlassesDetail({ params }: PageProps) {
                   shape: glasses.shape,
                   style: glasses.style,
                   color: glasses.color,
-                  price_cents: glasses.price_cents,
                 }}
               />
             </div>
