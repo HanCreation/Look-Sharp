@@ -54,3 +54,48 @@ body { @apply bg-gray-50 text-gray-900 antialiased; }
   animation: ls-shine 1.4s linear infinite;
 }
 
+/* --- Homepage gradient mesh & text utilities --- */
+.hero-mesh {
+  position: absolute;
+  inset: 0;
+  background-image:
+    radial-gradient(60% 55% at 10% 0%, rgba(33,113,212,0.18), transparent 60%),
+    radial-gradient(55% 50% at 95% 10%, rgba(99,102,241,0.22), transparent 62%),
+    radial-gradient(65% 60% at 40% 100%, rgba(14,165,233,0.20), transparent 62%),
+    linear-gradient(180deg, #F8FBFF 0%, #FFFFFF 60%);
+  filter: saturate(1.05);
+}
+
+.ls-text-gradient {
+  background-image: linear-gradient(92deg, #2171D4 0%, #6366F1 45%, #0EA5E9 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Auto-scrolling marquee for Featured carousel */
+.ls-marquee-track {
+  overflow: hidden;
+}
+.ls-marquee {
+  display: inline-flex;
+  width: max-content;
+  animation: ls-marquee-scroll 24s linear infinite;
+}
+@keyframes ls-marquee-scroll {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+@media (hover: hover) and (pointer: fine) {
+  .ls-marquee:hover { animation-play-state: paused; }
+}
+
+/* Prefer reduced motion: disable transforms on fancy effects */
+@media (prefers-reduced-motion: reduce) {
+  .will-change-transform, [class*="will-change-transform"] {
+    will-change: auto !important;
+    transform: none !important;
+    transition: none !important;
+  }
+}
+

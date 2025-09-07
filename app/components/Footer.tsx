@@ -12,7 +12,7 @@ export default function Footer() {
       <div className="absolute bottom-0 right-1/4 w-24 h-24 bg-gradient-to-br from-blue-100/50 to-transparent rounded-full blur-2xl"></div>
 
       <div className="relative mx-auto max-w-7xl px-6 lg:px-8 py-12">
-        <div className="grid gap-8 md:grid-cols-3 items-center">
+        <div className="grid gap-8 md:grid-cols-3 items-start">
           {/* Brand section */}
           <div className="space-y-4">
             <div className="flex items-center gap-3">
@@ -21,7 +21,7 @@ export default function Footer() {
               <span className="text-sm font-medium text-gray-600">AI Glasses Try-On</span>
             </div>
             <p className="text-sm text-gray-500 leading-relaxed max-w-xs">
-              Make your eyes look sharp and ensure your look is sharp with our AI-powered glasses try-on experience.
+              Make your eyes look sharp and ensure your look is sharp with our AI-powered try-on. No selfies stored.
             </p>
           </div>
 
@@ -71,7 +71,7 @@ export default function Footer() {
                 </div>
                 <div>
                   <p className="text-sm text-gray-600 leading-relaxed">
-                    Author server storage does not store your selfies or results
+                    No server storage of your selfies or results
                   </p>
                 </div>
               </div>
@@ -83,7 +83,7 @@ export default function Footer() {
                 </div>
                 <div>
                   <p className="text-sm text-gray-600 leading-relaxed">
-                    Powered by Google Gemini 2.5 Flash Image Generation (Nano Banana 🍌)
+                    Powered by Google Gemini 2.5 Flash Image Generation
                   </p>
                 </div>
               </div>
@@ -106,9 +106,7 @@ export default function Footer() {
         {/* Bottom section */}
         <div className="mt-8 pt-6 border-t border-gray-200/50">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-            <p className="text-xs text-gray-500">
-            ❤️ Coded & Created by Han 2025 for Nano Banana Hackathon
-            </p>
+            <p className="text-xs text-gray-500">Made with ❤️ for the Nano Banana Hackathon</p>
             <div className="flex items-center gap-4">
               <span className="text-xs text-gray-400">© 2025 @HanCreation x PutraGPT</span>
               <div className="flex items-center gap-2">
