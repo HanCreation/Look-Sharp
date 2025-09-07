@@ -17,6 +17,8 @@ export async function POST(req: Request) {
     const file = form.get('file');
     const glassesIdField = form.get('glassesId');
     const glassesId = typeof glassesIdField === 'string' ? glassesIdField : '';
+    const glassesUrlField = form.get('glassesUrl');
+    const glassesUrl = typeof glassesUrlField === 'string' ? glassesUrlField : '';
     const glassesFile = form.get('glassesFile');
 
     if (!(file instanceof Blob)) {
@@ -45,6 +47,34 @@ export async function POST(req: Request) {
       }
       const bytes = Buffer.from(await glassesFile.arrayBuffer());
       reference = { mime: gfMime, bytes };
+    } else if (glassesUrl) {
+      try {
+        if (glassesUrl.startsWith('/assets/')) {
+          // Local static asset path (served from public/assets/*)
+          const { default: nodePath } = await import('node:path');
+          const { default: nodeFs } = await import('node:fs');
+          const p = nodePath.join(process.cwd(), 'public', glassesUrl);
+          if (nodeFs.existsSync(p)) {
+            const bytes = nodeFs.readFileSync(p);
+            const ext = p.split('.').pop()?.toLowerCase();
+            const mimeLocal = ext === 'jpg' || ext === 'jpeg' ? 'image/jpeg' : 'image/png';
+            reference = { mime: mimeLocal, bytes };
+          } else {
+            return NextResponse.json({ error: 'Reference asset not found' }, { status: 404 });
+          }
+        } else if (/^https?:\/\//i.test(glassesUrl)) {
+          // Remote URL
+          const resp = await fetch(glassesUrl);
+          if (!resp.ok) throw new Error(`fetch_failed_${resp.status}`);
+          const ab = await resp.arrayBuffer();
+          const mimeFromResp = resp.headers.get('content-type') || 'image/png';
+          reference = { mime: mimeFromResp, bytes: Buffer.from(ab) };
+        } else {
+          return NextResponse.json({ error: 'Invalid reference URL' }, { status: 400 });
+        }
+      } catch {
+        return NextResponse.json({ error: 'Failed to load reference image' }, { status: 502 });
+      }
     } else {
       if (!glassesId) {
         return NextResponse.json({ error: 'Missing glasses reference (upload or id)' }, { status: 400 });

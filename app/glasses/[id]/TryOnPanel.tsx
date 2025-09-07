@@ -4,6 +4,7 @@ import React from "react";
 import { createPortal } from "react-dom";
 import { saveTryOnToDB } from "@/lib/indexeddb";
 import { toThumbnail } from "@/lib/client-image";
+import { MAX_UPLOAD_MB, MAX_UPLOAD_BYTES, ALLOWED_MIME } from "@/lib/upload-constraints";
 
 type Props = {
   glasses: {
@@ -15,9 +16,10 @@ type Props = {
     color?: string | null;
     price_cents?: number | null;
   };
+  referenceUrl?: string | null;
 };
 
-export default function TryOnPanel({ glasses }: Props) {
+export default function TryOnPanel({ glasses, referenceUrl }: Props) {
   const [faceFile, setFaceFile] = React.useState<File | null>(null);
   const [facePreviewUrl, setFacePreviewUrl] = React.useState<string | null>(null);
   const [result, setResult] = React.useState<string | null>(null);
@@ -25,6 +27,7 @@ export default function TryOnPanel({ glasses }: Props) {
   const [error, setError] = React.useState<string | null>(null);
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
   const [lightboxOpen, setLightboxOpen] = React.useState(false);
+  const [isDragOver, setIsDragOver] = React.useState(false);
 
   React.useEffect(() => {
     if (!faceFile) return setFacePreviewUrl(null);
@@ -37,12 +40,13 @@ export default function TryOnPanel({ glasses }: Props) {
     setError(null);
     setResult(null);
     if (!faceFile) {
-      setError("Please upload a face photo (JPG/PNG ≤ 10MB)");
+      setError(`Please upload a face photo (JPG/PNG ≤ ${MAX_UPLOAD_MB}MB)`);
       return;
     }
     const form = new FormData();
     form.append("file", faceFile);
     form.append("glassesId", glasses.id);
+    if (referenceUrl) form.append('glassesUrl', referenceUrl);
     // No server persistence; saving happens in browser storage
     setLoading(true);
     try {
@@ -75,6 +79,43 @@ export default function TryOnPanel({ glasses }: Props) {
     }
   }
 
+  function onFileSelected(f: File | null) {
+    if (!f) {
+      setFaceFile(null);
+      setResult(null);
+      return;
+    }
+    const mime = (f.type || '').toLowerCase();
+    if (!ALLOWED_MIME.includes(mime)) { setError('Only JPEG or PNG supported'); return; }
+    if (f.size > MAX_UPLOAD_BYTES) { setError(`File too large. Max ${MAX_UPLOAD_MB}MB`); return; }
+    setError(null);
+    setFaceFile(f);
+    setResult(null);
+    try { if (fileInputRef.current) fileInputRef.current.value = ''; } catch {}
+  }
+
+  function onDrop(e: React.DragEvent<HTMLButtonElement>) {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(false);
+    if (faceFile) return; // require discard before replacing
+    const f = e.dataTransfer.files?.[0] || null;
+    onFileSelected(f);
+  }
+
+  function onDragOver(e: React.DragEvent<HTMLButtonElement>) {
+    e.preventDefault();
+    e.stopPropagation();
+    if (faceFile) return;
+    setIsDragOver(true);
+  }
+
+  function onDragLeave(e: React.DragEvent<HTMLButtonElement>) {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(false);
+  }
+
   return (
     <div id="tryon" className="flex flex-col gap-6">
       <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
@@ -82,8 +123,16 @@ export default function TryOnPanel({ glasses }: Props) {
         <div className="mb-2 text-lg font-semibold text-gray-900">Upload your face</div>
         <button
           type="button"
-          onClick={() => document.getElementById("face-input")?.click()}
-          className="relative flex aspect-square w-full items-center justify-center overflow-hidden rounded-xl border-2 border-dashed border-gray-200 bg-gradient-to-b from-gray-50 to-white hover:border-gray-300"
+          onClick={() => { if (!faceFile) document.getElementById("face-input")?.click(); }}
+          onDrop={(e) => onDrop(e)}
+          onDragOver={(e) => onDragOver(e)}
+          onDragLeave={(e) => onDragLeave(e)}
+          className={
+            "relative flex aspect-square w-full items-center justify-center overflow-hidden rounded-xl border-2 border-dashed bg-gradient-to-b from-gray-50 to-white transition " +
+            (isDragOver ? "border-brand ring-2 ring-brand/50 " : "border-gray-200 hover:border-gray-300 ") +
+            (faceFile ? "cursor-default" : "cursor-pointer")
+          }
+          aria-label="Upload image dropzone"
         >
           {facePreviewUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
@@ -110,7 +159,7 @@ export default function TryOnPanel({ glasses }: Props) {
             <div className="text-center text-gray-500">
               <div className="text-sm font-medium">Drag & drop image here</div>
               <div className="text-xs">or click to browse</div>
-              <div className="mt-2 text-xs text-gray-400">PNG or JPG up to 10MB</div>
+              <div className="mt-2 text-xs text-gray-400">PNG or JPG up to {MAX_UPLOAD_MB}MB</div>
             </div>
           )}
           <input
@@ -119,11 +168,10 @@ export default function TryOnPanel({ glasses }: Props) {
             accept="image/png,image/jpeg"
             className="hidden"
             ref={fileInputRef}
-            onChange={(e) => setFaceFile(e.target.files?.[0] || null)}
+            onChange={(e) => onFileSelected(e.target.files?.[0] || null)}
           />
         </button>
         {/* Reset button removed; discard is available on the face upload */}
-        {error && <div className="mt-3 font-medium text-red-700">{error}</div>}
       </div>
       <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
         <div
@@ -137,6 +185,13 @@ export default function TryOnPanel({ glasses }: Props) {
           onClick={() => { if (!loading) { if (result) setLightboxOpen(true); else onGenerate(); } }}
           onKeyDown={(e) => { if (!loading && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); if (result) setLightboxOpen(true); else onGenerate(); } }}
         >
+          {error && (
+            <div className="absolute top-0 inset-x-0 z-20 flex justify-center pointer-events-none">
+              <div className="m-3 rounded-md bg-red-100 px-3 py-2 text-red-700 font-medium ring-1 ring-red-300 shadow-sm">
+                {error}
+              </div>
+            </div>
+          )}
           {result ? (
             // eslint-disable-next-line @next/next/no-img-element
             <>

@@ -4,6 +4,7 @@ import React from "react";
 import { createPortal } from "react-dom";
 import { saveTryOnToDB } from "@/lib/indexeddb";
 import { toThumbnail } from "@/lib/client-image";
+import { MAX_UPLOAD_MB, MAX_UPLOAD_BYTES, ALLOWED_MIME } from "@/lib/upload-constraints";
 
 export default function QuickTryOn() {
   const [faceFile, setFaceFile] = React.useState<File | null>(null);
@@ -40,11 +41,11 @@ export default function QuickTryOn() {
     setError(null);
     setResult(null);
     if (!faceFile) {
-      setError("Please upload a face photo (JPG/PNG ≤ 10MB)");
+      setError(`Please upload a face photo (JPG/PNG ≤ ${MAX_UPLOAD_MB}MB)`);
       return;
     }
     if (!glassesFile) {
-      setError("Please upload a glasses reference image (JPG/PNG ≤ 10MB)");
+      setError(`Please upload a glasses reference image (JPG/PNG ≤ ${MAX_UPLOAD_MB}MB)`);
       return;
     }
     const form = new FormData();
@@ -85,10 +86,11 @@ export default function QuickTryOn() {
               <div className="grid grid-cols-1 gap-6">
                 <UploadCard
                   title="Upload your face"
-                  subtitle="PNG or JPG up to 10MB • Front-facing works best"
+                  subtitle={`PNG or JPG up to ${MAX_UPLOAD_MB}MB • Front-facing works best`}
                   file={faceFile}
                   previewUrl={facePreviewUrl}
                   setFile={setFaceFile}
+                  setError={setError}
                   fit="cover"
                 />
                 <UploadCard
@@ -97,6 +99,7 @@ export default function QuickTryOn() {
                   file={glassesFile}
                   previewUrl={glassesPreviewUrl}
                   setFile={setGlassesFile}
+                  setError={setError}
                   fit="contain"
                 />
               </div>
@@ -128,7 +131,7 @@ export default function QuickTryOn() {
                   </>
                 ) : (
                   <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="text-gray-500 text-base md:text-lg">Click to see your new look</div>
+                    <div className="text-gray-500 text-base md:text-lg">Tap or click to see your new look</div>
                   </div>
                 )}
                 {loading && (
@@ -176,18 +179,30 @@ type UploadCardProps = {
   readonly file: File | null;
   readonly previewUrl: string | null;
   readonly setFile: (f: File | null) => void;
+  readonly setError: (m: string | null) => void;
   readonly fit?: "cover" | "contain";
 };
 
 function UploadCard(props: UploadCardProps) {
-  const { title, subtitle, file, previewUrl, setFile, fit = "contain" } = props;
+  const { title, subtitle, file, previewUrl, setFile, setError, fit = "contain" } = props;
   const [isDragOver, setIsDragOver] = React.useState(false);
   const inputRef = React.useRef<HTMLInputElement>(null);
 
   function onFileSelected(f: File | null) {
-    if (!f) return setFile(null);
+    if (!f) {
+      setFile(null);
+      return;
+    }
     const mime = (f.type || "").toLowerCase();
-    if (!(mime === "image/png" || mime === "image/jpeg")) return;
+    if (!ALLOWED_MIME.includes(mime)) {
+      setError("Only JPEG or PNG supported");
+      return;
+    }
+    if (f.size > MAX_UPLOAD_BYTES) {
+      setError(`File too large. Max ${MAX_UPLOAD_MB}MB`);
+      return;
+    }
+    setError(null);
     setFile(f);
   }
 

@@ -76,7 +76,28 @@ export default async function Browse({ searchParams }: { readonly searchParams: 
           <h1 className="text-2xl font-bold tracking-tight text-gray-900">Browse Frames</h1>
         </div>
 
-        <div className="mb-6 flex flex-wrap items-center gap-2">
+        {/* Mobile search */}
+        <form action="/browse" method="GET" className="md:hidden mb-4">
+          <label className="sr-only" htmlFor="browse-q">Search</label>
+          <div className="relative">
+            <input
+              id="browse-q"
+              name="q"
+              defaultValue={searchParams.q || ''}
+              placeholder="Search glasses..."
+              className="h-11 w-full rounded-full border-0 bg-white px-4 pr-10 text-base text-gray-800 placeholder:text-gray-500 shadow ring-1 ring-gray-200 focus:ring-2 focus:ring-brand"
+            />
+            <button className="absolute right-1 top-1/2 -translate-y-1/2 rounded-full bg-white/90 p-2 text-gray-700 shadow ring-1 ring-gray-200" aria-label="Search">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="11" cy="11" r="8" />
+                <line x1="21" y1="21" x2="16.65" y2="16.65" />
+              </svg>
+            </button>
+          </div>
+        </form>
+
+        <div className="mb-6 -mx-1 overflow-x-auto md:overflow-visible">
+          <div className="flex md:flex-wrap items-center gap-2 px-1 whitespace-nowrap">
           {shapes.map((s) => {
             const active = (searchParams.shape || '') === s.value;
             return (
@@ -94,6 +115,7 @@ export default async function Browse({ searchParams }: { readonly searchParams: 
               </Link>
             );
           })}
+          </div>
         </div>
 
         {items.length === 0 ? (

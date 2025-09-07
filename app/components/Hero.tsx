@@ -13,14 +13,14 @@ export default function Hero() {
       <div className="pointer-events-none absolute -left-20 -top-24 h-72 w-72 rounded-full bg-brand/25 blur-3xl" />
       <div className="pointer-events-none absolute -right-28 top-32 h-80 w-80 rounded-full bg-[rgba(99,102,241,0.25)] blur-3xl" />
 
-      <div className="relative mx-auto max-w-7xl px-6 pb-12 pt-32 md:pb-16 md:pt-56 lg:px-8 xl:pb-24 min-h-[72vh] md:min-h-[82vh]">
+      <div className="relative mx-auto max-w-7xl px-6 pb-12 pt-28 md:pb-16 md:pt-56 lg:px-8 xl:pb-24 min-h-[65vh] md:min-h-[82vh]">
         <div className="relative z-10 grid h-full items-center gap-12 md:grid-cols-2">
           {/* Copy */}
           <div className="max-w-3xl">
             <div className="inline-flex items-center gap-2 rounded-full bg-white/60 px-3 py-1 text-xs font-medium text-gray-700 backdrop-blur">
               <Image src="/logo.png" alt="LookSharp" width={96} height={24} className="h-6 w-auto" priority />
             </div>
-            <h1 className="mt-5 text-5xl md:text-7xl font-extrabold leading-tight tracking-tight">
+            <h1 className="mt-5 text-[clamp(2rem,6vw,4.5rem)] font-extrabold leading-tight tracking-tight">
               <span className="bg-gradient-to-br from-gray-900 to-gray-700 bg-clip-text text-transparent">Find your</span>
               <br />
               <span className="ls-text-gradient">sharpest look</span>
@@ -118,4 +118,3 @@ function CheckIcon() {
     </svg>
   );
 }
-

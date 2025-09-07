@@ -99,3 +99,24 @@ body { @apply bg-gray-50 text-gray-900 antialiased; }
   }
 }
 
+/* Small screens: move navbar to bottom and add safe padding */
+@media (max-width: 768px) {
+  #site-navbar {
+    top: auto !important;
+    bottom: max(0.5rem, env(safe-area-inset-bottom));
+    left: 0;
+    right: 0;
+  }
+  #site-navbar .navbar-card {
+    padding-bottom: calc(env(safe-area-inset-bottom) + 0.5rem);
+  }
+  #site-main {
+    padding-top: 1rem !important;
+    /* Reserve space for the floating bottom navbar (+safe area) */
+    padding-bottom: calc(var(--bottom-navbar-height, 11rem) + env(safe-area-inset-bottom));
+  }
+  footer {
+    /* Ensure footer content isn't obscured by the bottom navbar */
+    padding-bottom: calc(var(--bottom-navbar-height, 11rem) + env(safe-area-inset-bottom));
+  }
+}

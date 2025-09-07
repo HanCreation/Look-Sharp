@@ -10,8 +10,11 @@ function adjustForPgBouncer(u?: string) {
     const url = new URL(u);
     // Always disable prepared statements for maximum compatibility with poolers (e.g., PgBouncer)
     if (!url.searchParams.has('pgbouncer')) url.searchParams.set('pgbouncer', 'true');
-    // Limit connections to prevent prepared statement conflicts
-    if (!url.searchParams.has('connection_limit')) url.searchParams.set('connection_limit', '1');
+    // Connection settings: allow slight concurrency to avoid timeouts
+    const defaultConnLimit = String(process.env.PRISMA_CONNECTION_LIMIT || '').trim() || '3';
+    if (!url.searchParams.has('connection_limit')) url.searchParams.set('connection_limit', defaultConnLimit);
+    const defaultPoolTimeout = String(process.env.PRISMA_POOL_TIMEOUT || '').trim() || '30';
+    if (!url.searchParams.has('pool_timeout')) url.searchParams.set('pool_timeout', defaultPoolTimeout);
     // Keep SSL required by default when not explicitly set (helps with hosted Postgres providers)
     if (!url.searchParams.has('sslmode')) url.searchParams.set('sslmode', 'require');
     return url.toString();

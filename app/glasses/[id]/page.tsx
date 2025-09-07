@@ -32,6 +32,7 @@ export default async function GlassesDetail({ params }: PageProps) {
   }
   const gallery = (assets as MediaAsset[]).filter(isDisplayAsset);
   const cover = gallery[0];
+  const referenceAsset = (assets as MediaAsset[]).find(a => a.type === 'reference' && a.cdn_url);
   const thumbs = gallery.slice(1, 6);
   const shape = glasses.shape || glasses.glasses_shape;
 
@@ -135,6 +136,7 @@ export default async function GlassesDetail({ params }: PageProps) {
                   style: glasses.style,
                   color: glasses.color,
                 }}
+                referenceUrl={referenceAsset?.cdn_url}
               />
             </div>
           </div>

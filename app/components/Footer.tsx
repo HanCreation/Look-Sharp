@@ -3,7 +3,7 @@ import Image from "next/image";
 
 export default function Footer() {
   return (
-    <footer className="relative mt-16 overflow-hidden">
+    <footer className="relative mt-auto overflow-hidden bg-white border-t border-gray-200/60 flex-shrink-0" role="contentinfo">
       {/* Background with subtle gradient */}
       <div className="absolute inset-0 bg-gradient-to-br from-gray-50 via-white to-blue-50/30"></div>
 
@@ -106,7 +106,7 @@ export default function Footer() {
         {/* Bottom section */}
         <div className="mt-8 pt-6 border-t border-gray-200/50">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-            <p className="text-xs text-gray-500">Made with ❤️ for the Nano Banana Hackathon</p>
+            <p className="text-xs text-gray-500">❤️ Coded and Created by Han 2025 for the Nano Banana Hackathon</p>
             <div className="flex items-center gap-4">
               <span className="text-xs text-gray-400">© 2025 @HanCreation x PutraGPT</span>
               <div className="flex items-center gap-2">
@@ -120,5 +120,4 @@ export default function Footer() {
     </footer>
   );
 }
-
 

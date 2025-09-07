@@ -20,9 +20,9 @@ export default async function Featured() {
   }
   const row = items.length > 0 ? items : [];
   return (
-    <section className="bg-white py-14">
+    <section className="bg-white py-12 md:py-14">
       <div className="mx-auto max-w-7xl px-6 lg:px-8">
-        <h2 className="text-3xl font-bold tracking-tight text-gray-900">Sharp look, just for you</h2>
+        <h2 className="text-[clamp(1.5rem,3.5vw,2rem)] font-bold tracking-tight text-gray-900">Sharp look, just for you</h2>
 
         {row.length > 0 && (
           <div className="relative mt-6 overflow-hidden rounded-2xl border border-gray-100 bg-white ring-1 ring-gray-200/60">
@@ -49,7 +49,7 @@ function Card({ id, brand, name, cover }: { readonly id: string; readonly brand:
   return (
     <Link
       href={`/glasses/${id}`}
-      className="relative mr-5 inline-flex w-[260px] flex-shrink-0 overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm ring-1 ring-gray-200/60 transition hover:shadow-md hover:ring-gray-300"
+      className="relative mr-3 sm:mr-5 inline-flex w-[72vw] sm:w-[260px] flex-shrink-0 overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm ring-1 ring-gray-200/60 transition hover:shadow-md hover:ring-gray-300"
     >
       <div className="relative aspect-[4/3] w-full bg-gray-50">
         {cover ? (
@@ -68,4 +68,3 @@ function Card({ id, brand, name, cover }: { readonly id: string; readonly brand:
     </Link>
   );
 }
-
