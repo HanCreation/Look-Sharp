@@ -8,3 +8,4 @@
 /.seed_data
 /.vercel
 *.log
+tsconfig.tsbuildinfo
