@@ -127,7 +127,7 @@ export default function Footer() {
                   className="text-xs text-gray-600 hover:text-brand transition-colors"
                   aria-label="Han's website"
                 >
-                  dhans.vercel.app
+                  Visit my personal Website
                 </a>
               </div>
               <div className="flex items-center gap-2">
