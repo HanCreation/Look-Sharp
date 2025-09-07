@@ -8,7 +8,18 @@ if (!url) {
   process.exit(1);
 }
 
-const prisma = new PrismaClient();
+function adjustForPgBouncer(u) {
+  if (!u) return u;
+  try {
+    const url = new URL(u);
+    const isPooler = url.hostname.includes('pooler.supabase.com') || url.port === '6543';
+    if (isPooler && !url.searchParams.has('pgbouncer')) url.searchParams.set('pgbouncer', 'true');
+    if (!url.searchParams.has('sslmode')) url.searchParams.set('sslmode', 'require');
+    return url.toString();
+  } catch { return u; }
+}
+
+const prisma = new PrismaClient({ datasources: { db: { url: adjustForPgBouncer(url) } } });
 
 async function main() {
   // NOTE: Ensure schema is applied first (e.g., `npm run prisma:push`).

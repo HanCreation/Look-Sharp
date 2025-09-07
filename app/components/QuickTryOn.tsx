@@ -1,6 +1,9 @@
 "use client";
 
 import React from "react";
+import { createPortal } from "react-dom";
+import { saveTryOnToDB } from "@/lib/indexeddb";
+import { toThumbnail } from "@/lib/client-image";
 
 export default function QuickTryOn() {
   const [faceFile, setFaceFile] = React.useState<File | null>(null);
@@ -10,6 +13,7 @@ export default function QuickTryOn() {
   const [result, setResult] = React.useState<string | null>(null);
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
+  const [lightboxOpen, setLightboxOpen] = React.useState(false);
 
   React.useEffect(() => {
     // Create object URLs for previews; clean up on change/unmount
@@ -46,8 +50,7 @@ export default function QuickTryOn() {
     const form = new FormData();
     form.append("file", faceFile);
     form.append("glassesFile", glassesFile);
-    // Ensure server also persists result to local database
-    form.append("persist", "1");
+    // Server does not persist try-on images; storage is browser-only
     setLoading(true);
     try {
       const res = await fetch("/api/tryon", { method: "POST", body: form });
@@ -57,20 +60,13 @@ export default function QuickTryOn() {
       const dataUrl = `data:image/png;base64,${b64}`;
       setResult(dataUrl);
 
-      // Save to My Try-Ons (local browser storage)
+      // Save to My Try-Ons (IndexedDB, with compression)
       try {
         const thumbUrl = await toThumbnail(dataUrl, 768, 0.85).catch(() => dataUrl);
-        const key = "looksharp.tryons";
-        const prev: any[] = JSON.parse(localStorage.getItem(key) || "[]");
-        const id = typeof data.id === 'string' && data.id ? data.id : genLocalId();
-        const next = prev.filter((i) => i && i.id !== id);
-        next.unshift({
-          id,
-          createdAt: new Date().toISOString(),
-          imageDataUrl: thumbUrl,
+        await saveTryOnToDB(thumbUrl, {
           source: 'custom',
+          createdAt: new Date().toISOString(),
         });
-        localStorage.setItem(key, JSON.stringify(next.slice(0, 50)));
       } catch {}
     } catch (err: any) {
       setError(err?.message || "Failed to generate");
@@ -106,12 +102,33 @@ export default function QuickTryOn() {
               </div>
             </div>
             <div className="lg:col-span-2 flex flex-col justify-center min-h-[72vh]">
-              <div className="relative mx-auto flex w-full max-w-3xl items-center justify-center overflow-hidden rounded-xl border-2 border-dashed border-gray-200 bg-gray-50 min-h-[360px] md:min-h-[460px] lg:min-h-[520px]">
+              <div
+                className={
+                  "relative mx-auto flex w-full max-w-3xl items-center justify-center overflow-hidden rounded-xl border-2 border-dashed bg-gray-50 min-h-[360px] md:min-h-[460px] lg:min-h-[520px] " +
+                  (loading ? "border-gray-200 opacity-90 pointer-events-none " : "border-gray-200 hover:border-brand cursor-pointer ")
+                }
+                role="button"
+                tabIndex={0}
+                aria-label={loading ? "Generating your look" : (result ? "View enlarged try-on" : "Click to see your new look")}
+                onClick={() => { if (!loading) { if (result) setLightboxOpen(true); else onGenerate(); } }}
+                onKeyDown={(e) => { if (!loading && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); if (result) setLightboxOpen(true); else onGenerate(); } }}
+              >
                 {result ? (
-                  <img className="absolute inset-0 h-full w-full object-cover" src={result} alt="Generated try-on result" />
+                  <>
+                    <img className="absolute inset-0 h-full w-full object-cover" src={result} alt="Generated try-on result" />
+                    <button
+                      type="button"
+                      className="absolute right-2 top-2 rounded-full bg-white/90 px-2 py-1 text-xs font-medium text-gray-700 shadow-sm ring-1 ring-black/5 hover:bg-white"
+                      onClick={(e) => { e.stopPropagation(); if (!loading) onGenerate(); }}
+                      aria-label="Regenerate look"
+                      title="Regenerate"
+                    >
+                      Regenerate
+                    </button>
+                  </>
                 ) : (
                   <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="text-gray-500 text-base md:text-lg">Generate to see your new look</div>
+                    <div className="text-gray-500 text-base md:text-lg">Click to see your new look</div>
                   </div>
                 )}
                 {loading && (
@@ -132,16 +149,7 @@ export default function QuickTryOn() {
                   </div>
                 )}
               </div>
-              <div className="mt-6 flex justify-center">
-                <button
-                  className="inline-flex items-center justify-center rounded-full bg-brand px-6 py-3 text-sm font-semibold text-white transition hover:bg-brand/90 disabled:opacity-50"
-                  onClick={onGenerate}
-                  disabled={loading}
-                >
-                  {loading ? "Generating..." : "Generate your look"}
-                </button>
-              </div>
-
+              {/* Placeholder acts as the generate trigger; button removed */}
               {/* Footnote about Google usage */}
               <div className="mt-4 flex items-center justify-center">
                 <div className="flex items-center gap-2 rounded-lg bg-gray-50 px-3 py-2 text-xs text-gray-500">
@@ -155,6 +163,9 @@ export default function QuickTryOn() {
           </div>
         </div>
       </div>
+      {result && (
+        <Lightbox open={lightboxOpen} src={result} onClose={() => setLightboxOpen(false)} />
+      )}
     </section>
   );
 }
@@ -292,37 +303,40 @@ function UploadCard(props: UploadCardProps) {
   );
 }
 
-// Helpers
-function genLocalId(): string {
-  try {
-    if (typeof crypto !== 'undefined' && (crypto as any).randomUUID) return (crypto as any).randomUUID();
-  } catch {}
-  return `ls_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
-}
+// No local helpers; shared utilities are imported
 
-async function toThumbnail(srcDataUrl: string, maxDim = 768, quality = 0.85): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.decoding = 'async';
-    img.onload = () => {
-      try {
-        const { width, height } = img;
-        const scale = Math.min(1, maxDim / Math.max(width, height));
-        const w = Math.max(1, Math.round(width * scale));
-        const h = Math.max(1, Math.round(height * scale));
-        const canvas = document.createElement('canvas');
-        canvas.width = w;
-        canvas.height = h;
-        const ctx = canvas.getContext('2d');
-        if (!ctx) return resolve(srcDataUrl);
-        ctx.drawImage(img, 0, 0, w, h);
-        const out = canvas.toDataURL('image/jpeg', quality);
-        resolve(out);
-      } catch (e) {
-        resolve(srcDataUrl);
-      }
-    };
-    img.onerror = () => reject(new Error('thumbnail_failed'));
-    img.src = srcDataUrl;
-  });
+function Lightbox({ open, src, onClose }: { open: boolean; src: string; onClose: () => void }) {
+  if (!open) return null;
+  return createPortal(
+    <div
+      className="fixed inset-0 z-[1000] bg-black/60 backdrop-blur-sm"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Enlarged try-on preview"
+      onClick={onClose}
+    >
+      <div className="absolute inset-0 flex items-center justify-center p-4">
+        <div
+          className="relative max-h-full max-w-5xl rounded-2xl bg-brand/60 p-2 shadow-2xl ring-2 ring-brand/60 backdrop-blur-2xl"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <img src={src} alt="Try-on preview" className="max-h-[85vh] rounded-xl" />
+          <div className="pointer-events-none absolute right-3 top-3">
+            <button
+              className="pointer-events-auto inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/80 text-gray-900 shadow ring-1 ring-white/60 transition hover:bg-white"
+              onClick={onClose}
+              aria-label="Close"
+              title="Close"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="h-6 w-6">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
+              </svg>
+              <span className="sr-only">Close</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>,
+    document.body
+  );
 }

@@ -2,6 +2,8 @@
 
 import Link from 'next/link';
 import React from 'react';
+import { createPortal } from 'react-dom';
+import { getAllTryOnsFromDB, deleteTryOnFromDB, clearAllTryOnsFromDB } from '@/lib/indexeddb';
 
 type Item = {
   id: string;
@@ -22,12 +24,32 @@ export default function TryOnsPage() {
   const [lightboxItem, setLightboxItem] = React.useState<Item | null>(null);
 
   React.useEffect(() => {
-    try {
-      const data = JSON.parse(localStorage.getItem('looksharp.tryons') || '[]');
-      setItems(Array.isArray(data) ? data : []);
-    } catch {
-      setItems([]);
-    }
+    let cancelled = false;
+    (async () => {
+      try {
+        const records = await getAllTryOnsFromDB();
+        if (cancelled) return;
+        const mapped: Item[] = records.map(r => ({
+          id: r.id,
+          createdAt: r.createdAt,
+          imageDataUrl: r.imageDataUrl || URL.createObjectURL(r.imageBlob),
+          glassesId: r.glassesId,
+          brand: r.brand,
+          name: r.name,
+          shape: r.shape ?? undefined,
+          style: r.style ?? undefined,
+          color: r.color ?? undefined,
+          price_cents: r.price_cents ?? undefined,
+          source: r.source ?? 'custom',
+        }));
+        setItems(mapped);
+      } catch {
+        setItems([]);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   React.useEffect(() => {
@@ -44,10 +66,9 @@ export default function TryOnsPage() {
     };
   }, [lightboxItem]);
 
-  function remove(id: string) {
-    const next = items.filter((i) => i.id !== id);
-    setItems(next);
-    localStorage.setItem('looksharp.tryons', JSON.stringify(next));
+  async function remove(id: string) {
+    await deleteTryOnFromDB(id);
+    setItems(prev => prev.filter(i => i.id !== id));
   }
 
   return (
@@ -57,9 +78,9 @@ export default function TryOnsPage() {
           <h1 className="text-2xl font-bold tracking-tight text-gray-900">My Try-Ons</h1>
           <button
             className="rounded-full border border-gray-300 bg-white px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-            onClick={() => {
+            onClick={async () => {
               if (confirm('Clear all saved try-ons?')) {
-                localStorage.removeItem('looksharp.tryons');
+                await clearAllTryOnsFromDB();
                 setItems([]);
               }
             }}
@@ -126,9 +147,9 @@ export default function TryOnsPage() {
           </div>
         )}
       </div>
-      {lightboxItem && (
+      {lightboxItem && createPortal(
         <div
-          className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm"
+          className="fixed inset-0 z-[1000] bg-black/60 backdrop-blur-sm"
           role="dialog"
           aria-modal="true"
           aria-label="Enlarged try-on preview"
@@ -208,7 +229,8 @@ export default function TryOnsPage() {
               </div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </section>
   );

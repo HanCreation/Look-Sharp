@@ -23,7 +23,7 @@ AI-assisted metadata (optional):
 - If `GEMINI_API_KEY` is set, the seeder inspects the reference image with Gemini and generates realistic metadata: brand, model, shape, style, color, sex, sizes, price, tags, and alt text. It then normalizes fields and falls back to filename-based inference if anything is missing.
 - Set `GEMINI_MODEL_ID` to override the default (`gemini-2.5-flash-image-preview`).
 
-Run the seeder:
+Run the seeder (SQLite by default):
 
 ```
 npm run db:seed:images
@@ -32,3 +32,30 @@ npm run db:seed:images
 Notes:
 - For Postgres (Supabase), ensure the database schema is applied first: `npm run prisma:push` (or `prisma migrate deploy` in CI).
 - For local (SQLite), the script creates `.data/dev.sqlite` with the minimal schema if missing.
+
+## Supabase (Postgres) Setup
+
+To use a hosted Postgres (e.g., Supabase) and upload product images to Vercel Blob:
+
+- Set your connection string in `.env.local`:
+  - `DATABASE_URL=postgresql://USER:PASSWORD@HOST:PORT/DB?sslmode=require`
+  - Or `POSTGRES_PRISMA_URL` if using Vercel + Supabase integration.
+- Make sure `FORCE_SQLITE` is not set (or is `0`).
+- Provide a Vercel Blob token so images go to Blob, not the local `public` folder:
+  - `BLOB_READ_WRITE_TOKEN=...`
+- Optionally set the base URL for server-side fetches:
+  - `NEXT_PUBLIC_APP_URL=https://your-dev-url.example.com`
+
+Apply schema to Postgres:
+
+```
+npm run prisma:push
+```
+
+Seed from images (enforcing Blob uploads):
+
+```
+REQUIRE_BLOB_FOR_IMAGES=1 npm run db:seed:images
+```
+
+If an upload fails or the token is missing while `REQUIRE_BLOB_FOR_IMAGES=1`, the seeder will stop with an error instead of copying images into `public/`.

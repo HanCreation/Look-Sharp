@@ -2,6 +2,14 @@ import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
+// Load environment variables from .env and .env.local for standalone execution
+try {
+  const dotenv = await import('dotenv');
+  dotenv.config();
+  // Let .env.local override .env if present
+  const localPath = path.join(process.cwd(), '.env.local');
+  if (fs.existsSync(localPath)) dotenv.config({ path: localPath, override: true });
+} catch {}
 
 // Optional imports guarded at runtime
 let PrismaClient = null;
@@ -14,17 +22,44 @@ const PUBLIC_ASSET_PREFIX = path.posix.join('assets', 'glasses');
 
 // Detect DB target like the app does
 function getDatabaseUrl() {
-  return (
+  const url = (
     process.env.POSTGRES_PRISMA_URL ||
     process.env.DATABASE_URL ||
     process.env.POSTGRES_URL ||
     process.env.POSTGRES_URL_NON_POOLING ||
     ''
   );
+  if (!url) {
+    console.warn('[seed-from-images] No Postgres URL found in env; defaulting to SQLite. Set DATABASE_URL or POSTGRES_PRISMA_URL for Supabase.');
+  } else {
+    console.log('[seed-from-images] Using database URL:', url.replace(/:[^:@/]+@/, ':****@'));
+  }
+  return url;
+}
+
+function adjustForPgBouncer(u) {
+  if (!u) return '';
+  try {
+    const url = new URL(u);
+    const isPooler = url.hostname.includes('pooler.supabase.com') || url.port === '6543';
+    if (isPooler && !url.searchParams.has('pgbouncer')) url.searchParams.set('pgbouncer', 'true');
+    if (!url.searchParams.has('sslmode')) url.searchParams.set('sslmode', 'require');
+    return url.toString();
+  } catch {
+    return u;
+  }
 }
 
 function isPostgresUrl(url) {
   return url.startsWith('postgres://') || url.startsWith('postgresql://');
+}
+
+function requireBlobUploads() {
+  const requireEnv = String(process.env.REQUIRE_BLOB_FOR_IMAGES || '').trim();
+  if (requireEnv === '1' || /^(true|yes|on)$/i.test(requireEnv)) return true;
+  // Default: require Blob when targeting Postgres (production-like) to avoid local public copies
+  const url = getDatabaseUrl();
+  return isPostgresUrl(url);
 }
 
 function titleCase(s) {
@@ -354,7 +389,7 @@ function gatherSeedGroups() {
 
 async function maybeUploadToBlob(key, bytes, contentType) {
   const token = process.env.BLOB_READ_WRITE_TOKEN;
-  if (!token) return null; // caller should use local copy fallback
+  if (!token) return null; // caller may enforce requirement
 
   if (!put) {
     // Lazy import
@@ -462,6 +497,7 @@ async function seedSqlite(groups) {
   } catch {}
 
   const nowIso = new Date().toISOString();
+  const mustBlob = requireBlobUploads();
 
   for (const group of groups) {
     const names = group.files.map((f) => f.base);
@@ -506,6 +542,9 @@ async function seedSqlite(groups) {
       } catch (e) {
         console.warn('Blob upload failed, falling back to public:', e?.message || e);
       }
+      if (mustBlob && !uploaded) {
+        throw new Error('Image upload required but BLOB_READ_WRITE_TOKEN missing or upload failed. Set REQUIRE_BLOB_FOR_IMAGES=0 to allow public fallback.');
+      }
       const dest = uploaded ?? copyToPublic(storageKey, bytes);
 
       const assetId = uuidFromString(meta.sku + ':' + f.base);
@@ -539,7 +578,9 @@ async function seedPostgres(groups) {
   if (!PrismaClient) {
     ({ PrismaClient } = await import('@prisma/client'));
   }
-  const prisma = new PrismaClient();
+  const url = adjustForPgBouncer(getDatabaseUrl());
+  const prisma = new PrismaClient({ ...(url ? { datasources: { db: { url } } } : {}) });
+  const mustBlob = requireBlobUploads();
 
   try {
     for (const group of groups) {
@@ -584,6 +625,9 @@ async function seedPostgres(groups) {
           uploaded = await maybeUploadToBlob(storageKey, bytes, info.mime);
         } catch (e) {
           console.warn('Blob upload failed, falling back to public:', e?.message || e);
+        }
+        if (mustBlob && !uploaded) {
+          throw new Error('Image upload required but BLOB_READ_WRITE_TOKEN missing or upload failed. Set REQUIRE_BLOB_FOR_IMAGES=0 to allow public fallback.');
         }
         const dest = uploaded ?? copyToPublic(storageKey, bytes);
 

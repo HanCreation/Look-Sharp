@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { headers } from 'next/headers';
+import { getRepo } from '@/lib/repo';
 
 type SearchParams = Readonly<{
   q?: string;
@@ -23,34 +23,20 @@ type Glasses = {
 
 async function getData(searchParams: SearchParams) {
   try {
-    const params = new URLSearchParams();
-    if (searchParams.q) params.set('query', searchParams.q);
-    if (searchParams.brand) params.set('brand', searchParams.brand);
-    if (searchParams.style) params.set('style', searchParams.style);
-    if (searchParams.shape) params.set('shape', searchParams.shape);
-    params.set('page', String(Number(searchParams.page || '1')));
-    params.set('limit', '12');
-
-    // In Node runtime, fetch needs an absolute URL. Build one from headers/env.
-    const hdrs = headers();
-    const host = hdrs.get('x-forwarded-host') || hdrs.get('host') || process.env.VERCEL_URL;
-    const proto = hdrs.get('x-forwarded-proto') || (process.env.VERCEL ? 'https' : 'http');
-    const base = process.env.NEXT_PUBLIC_APP_URL || (host ? `${proto}://${host}` : 'http://localhost:3000');
-    const res = await fetch(`${base}/api/glasses?${params.toString()}`,
-    {
-      cache: 'no-store',
+    const repo = await getRepo();
+    const page = Math.max(1, Number(searchParams.page || '1'));
+    const limit = 12;
+    const { items, total } = await repo.listGlasses({
+      query: searchParams.q,
+      brand: searchParams.brand,
+      style: searchParams.style,
+      shape: searchParams.shape?.replace('rectangular', 'rectangle') || undefined,
+      page,
+      limit,
     });
-
-    if (!res.ok) {
-      console.error('API request failed:', res.status, res.statusText);
-      // Return empty data instead of throwing
-      return { items: [], total: 0, page: 1, limit: 12 };
-    }
-
-    return res.json() as Promise<{ items: Glasses[]; total: number; page: number; limit: number }>;
+    return { items: items as any as Glasses[], total, page, limit };
   } catch (error) {
-    console.error('Failed to fetch glasses data:', error);
-    // Return empty data instead of throwing
+    console.error('Failed to load glasses via repo:', error);
     return { items: [], total: 0, page: 1, limit: 12 };
   }
 }
@@ -141,31 +127,52 @@ export default async function Browse({ searchParams }: { readonly searchParams: 
         ) : (
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {items.map((g) => (
-              <article key={g.id} className="group overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm transition hover:shadow-md">
+              <article
+                key={g.id}
+                className="group overflow-hidden rounded-2xl border border-gray-100 bg-white/70 shadow-sm ring-1 ring-gray-200/60 backdrop-blur transition hover:shadow-md hover:ring-gray-300"
+              >
                 <div className="relative aspect-[4/3] w-full bg-gray-100">
                   {g.cover_cdn_url ? (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={g.cover_cdn_url} alt="" className="h-full w-full object-cover" />
+                    <img
+                      src={g.cover_cdn_url}
+                      alt=""
+                      className="h-full w-full object-cover transition-transform duration-300 will-change-transform group-hover:scale-[1.03]"
+                    />
                   ) : (
                     <div className="flex h-full w-full items-center justify-center text-gray-400">No image</div>
                   )}
+                  <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/5 via-black/0 to-black/0 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
                 </div>
                 <div className="p-4">
-                  <div className="mb-1 text-sm font-medium text-brand">{g.brand}</div>
-                  <h3 className="text-lg font-semibold text-gray-900">{g.name}</h3>
-                  <div className="mt-2 flex items-center justify-between text-sm text-gray-600">
-                    <span>{g.shape || '—'}</span>
-                    {g.price_cents != null && <span>${(g.price_cents / 100).toFixed(2)}</span>}
+                  <div className="mb-1 flex items-center justify-between">
+                    <div className="text-sm font-medium text-brand">{g.brand}</div>
+                    {g.price_cents != null && (
+                      <span className="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-semibold text-gray-900">
+                        ${((g.price_cents || 0) / 100).toFixed(2)}
+                      </span>
+                    )}
                   </div>
+                  <h3 className="truncate text-lg font-semibold text-gray-900">{g.name}</h3>
+                  <div className="mt-1 text-sm text-gray-600">{g.shape || '—'}</div>
                   <div className="mt-4 flex items-center justify-between">
-                    <Link href={`/glasses/${g.id}`} className="text-brand hover:underline">
+                    <Link href={`/glasses/${g.id}`} className="text-sm font-medium text-brand transition hover:underline">
                       View details
                     </Link>
                     <Link
                       href={`/glasses/${g.id}#tryon`}
-                      className="inline-flex items-center rounded-full bg-brand px-4 py-2 text-sm font-semibold text-white hover:bg-brand/90"
+                      className="inline-flex items-center gap-2 rounded-full bg-brand px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-brand/90 hover:shadow-md"
                     >
-                      Try on
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 20 20"
+                        fill="currentColor"
+                        className="h-4 w-4"
+                        aria-hidden="true"
+                      >
+                        <path d="M10 2c-2.21 0-4 1.79-4 4v2H4a2 2 0 00-2 2v3a3 3 0 003 3h10a3 3 0 003-3v-3a2 2 0 00-2-2h-2V6c0-2.21-1.79-4-4-4zm-2 6V6a2 2 0 114 0v2H8z" />
+                      </svg>
+                      <span>Try on</span>
                     </Link>
                   </div>
                 </div>

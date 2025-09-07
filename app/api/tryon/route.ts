@@ -18,8 +18,6 @@ export async function POST(req: Request) {
     const glassesIdField = form.get('glassesId');
     const glassesId = typeof glassesIdField === 'string' ? glassesIdField : '';
     const glassesFile = form.get('glassesFile');
-    const persistFlag = form.get('persist');
-    const shouldPersist = typeof persistFlag === 'string' ? ['1','true','yes','on'].includes(persistFlag.toLowerCase()) : false;
 
     if (!(file instanceof Blob)) {
       return NextResponse.json({ error: 'Missing file' }, { status: 400 });
@@ -57,6 +55,17 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: 'No reference asset for glasses' }, { status: 400 });
       }
       reference = fetched as any;
+      if (!reference.bytes && reference.url) {
+        try {
+          const resp = await fetch(reference.url);
+          if (!resp.ok) throw new Error(`fetch_failed_${resp.status}`);
+          const ab = await resp.arrayBuffer();
+          const mimeFromResp = resp.headers.get('content-type') || reference.mime || 'image/png';
+          reference = { mime: mimeFromResp, bytes: Buffer.from(ab) };
+        } catch (e) {
+          return NextResponse.json({ error: 'Failed to load reference image' }, { status: 502 });
+        }
+      }
     }
 
     const selfieBytes = Buffer.from(await file.arrayBuffer());
@@ -71,38 +80,7 @@ export async function POST(req: Request) {
     });
     const elapsedMs = Date.now() - started;
 
-    // Optionally persist to local database
-    let savedId: string | undefined;
-    if (shouldPersist) {
-      try {
-        const repo = await getRepo();
-        let meta: any = {};
-        if (glassesId) {
-          const g = await repo.getGlassesById(glassesId);
-          if (g?.glasses) {
-            meta = {
-              glassesId: g.glasses.id,
-              brand: g.glasses.brand,
-              name: g.glasses.name,
-              shape: g.glasses.shape,
-              style: g.glasses.style,
-              color: g.glasses.color,
-              price_cents: g.glasses.price_cents,
-            };
-          }
-        }
-        const imageDataUrl = `data:image/png;base64,${imageBase64}`;
-        savedId = await repo.createTryOn({
-          source: glassesId ? 'product' : 'custom',
-          imageDataUrl,
-          ...meta,
-        });
-      } catch (e) {
-        console.warn('tryon persist failed:', (e as any)?.message || e);
-      }
-    }
-
-    const res = NextResponse.json({ imageBase64, modelId, elapsedMs, id: savedId }, { status: 200 });
+    const res = NextResponse.json({ imageBase64, modelId, elapsedMs }, { status: 200 });
     res.headers.set('Cache-Control', 'no-store');
     return res;
   } catch (err: any) {

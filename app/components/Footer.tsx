@@ -110,7 +110,7 @@ export default function Footer() {
             ❤️ Coded & Created by Han 2025 for Nano Banana Hackathon
             </p>
             <div className="flex items-center gap-4">
-              <span className="text-xs text-gray-400">© 2025 @HanCreation x Google</span>
+              <span className="text-xs text-gray-400">© 2025 @HanCreation x PutraGPT</span>
               <div className="flex items-center gap-2">
                 <div className="w-1.5 h-1.5 rounded-full bg-gradient-to-r from-brand to-blue-500"></div>
                 <span className="text-xs text-gray-500">Powered by Google AI Studio</span>
