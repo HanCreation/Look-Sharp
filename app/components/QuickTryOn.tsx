@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { saveTryOnToDB } from "@/lib/indexeddb";
 import { toThumbnail } from "@/lib/client-image";
 import { MAX_UPLOAD_MB, MAX_UPLOAD_BYTES, ALLOWED_MIME } from "@/lib/upload-constraints";
+import { getUserGeminiApiKey } from "@/lib/client-config";
 
 export default function QuickTryOn() {
   const [faceFile, setFaceFile] = React.useState<File | null>(null);
@@ -54,7 +55,12 @@ export default function QuickTryOn() {
     // Server does not persist try-on images; storage is browser-only
     setLoading(true);
     try {
-      const res = await fetch("/api/tryon", { method: "POST", body: form });
+      const userKey = getUserGeminiApiKey();
+      const res = await fetch("/api/tryon", {
+        method: "POST",
+        body: form,
+        headers: userKey ? { "x-gemini-api-key": userKey } : undefined,
+      });
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error || "Failed to generate");
       const b64 = data.imageBase64 as string;

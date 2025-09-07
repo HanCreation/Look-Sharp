@@ -6,29 +6,29 @@ import React from "react";
 
 export default function Hero() {
   return (
-    <section className="relative -mt-24 overflow-hidden">
+    <section className="relative -mt-12 md:-mt-24 overflow-hidden">
       {/* Gradient mesh background */}
       <div className="absolute inset-0 hero-mesh" />
       {/* Soft ornaments */}
       <div className="pointer-events-none absolute -left-20 -top-24 h-72 w-72 rounded-full bg-brand/25 blur-3xl" />
       <div className="pointer-events-none absolute -right-28 top-32 h-80 w-80 rounded-full bg-[rgba(99,102,241,0.25)] blur-3xl" />
 
-      <div className="relative mx-auto max-w-7xl px-6 pb-12 pt-28 md:pb-16 md:pt-56 lg:px-8 xl:pb-24 min-h-[65vh] md:min-h-[82vh]">
-        <div className="relative z-10 grid h-full items-center gap-12 md:grid-cols-2">
+      <div className="relative mx-auto max-w-7xl px-6 pb-12 pt-24 md:pb-16 md:pt-56 lg:px-8 xl:pb-24 min-h-[60vh] md:min-h-[82vh]">
+        <div className="relative z-10 grid h-full items-center gap-8 md:gap-12 md:grid-cols-2">
           {/* Copy */}
           <div className="max-w-3xl">
             <div className="inline-flex items-center gap-2 rounded-full bg-white/60 px-3 py-1 text-xs font-medium text-gray-700 backdrop-blur">
               <Image src="/logo.png" alt="LookSharp" width={96} height={24} className="h-6 w-auto" priority />
             </div>
-            <h1 className="mt-5 text-[clamp(2rem,6vw,4.5rem)] font-extrabold leading-tight tracking-tight">
+            <h1 className="mt-5 text-[clamp(2rem,7vw,4.5rem)] font-extrabold leading-tight tracking-tight">
               <span className="bg-gradient-to-br from-gray-900 to-gray-700 bg-clip-text text-transparent">Find your</span>
               <br />
               <span className="ls-text-gradient">sharpest look</span>
             </h1>
-            <p className="mt-5 max-w-xl text-lg md:text-2xl leading-8 text-gray-700">
+            <p className="mt-4 max-w-xl text-base md:text-2xl leading-7 md:leading-8 text-gray-700">
             Make your eyes can <span className="text-brand font-semibold">look sharp</span> <br /> and make sure your <span className="text-brand font-semibold">look is sharp</span>.
             </p>
-            <div className="mt-8 flex flex-wrap items-center gap-3">
+            <div className="mt-6 md:mt-8 flex flex-wrap items-center gap-3">
               <Link
                 href="/browse"
                 className="inline-flex items-center justify-center rounded-full bg-brand px-6 py-3 text-base font-semibold text-white shadow-sm transition hover:bg-brand/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2"

@@ -14,6 +14,10 @@ export async function POST(req: Request) {
     }
 
     const form = await req.formData();
+    // Optional: client-provided Gemini API key. If empty, server env key is used.
+    const clientApiKeyHeader = req.headers.get('x-gemini-api-key') || '';
+    const clientApiKeyForm = typeof form.get('apiKey') === 'string' ? (form.get('apiKey') as string) : '';
+    const clientApiKey = (clientApiKeyHeader || clientApiKeyForm || '').trim();
     const file = form.get('file');
     const glassesIdField = form.get('glassesId');
     const glassesId = typeof glassesIdField === 'string' ? glassesIdField : '';
@@ -107,6 +111,7 @@ export async function POST(req: Request) {
       selfie: { mime, bytes: selfieBytes },
       reference,
       prompt,
+      apiKeyOverride: clientApiKey || undefined,
     });
     const elapsedMs = Date.now() - started;
 

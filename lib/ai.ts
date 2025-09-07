@@ -6,8 +6,9 @@ export async function generateTryOn(args: {
   selfie: ImagePart;
   reference: ImagePart;
   prompt: string;
+  apiKeyOverride?: string | null;
 }): Promise<{ imageBase64: string; modelId: string }> {
-  const apiKey = process.env.GEMINI_API_KEY;
+  const apiKey = (args.apiKeyOverride && args.apiKeyOverride.trim()) || process.env.GEMINI_API_KEY;
   if (!apiKey) throw new Error('Missing GEMINI_API_KEY');
   const modelId = process.env.GEMINI_MODEL_ID || 'gemini-2.5-flash-image-preview';
 

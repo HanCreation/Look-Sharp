@@ -76,8 +76,12 @@ export default async function Browse({ searchParams }: { readonly searchParams: 
           <h1 className="text-2xl font-bold tracking-tight text-gray-900">Browse Frames</h1>
         </div>
 
-        {/* Mobile search */}
-        <form action="/browse" method="GET" className="md:hidden mb-4">
+        {/* Mobile search (sticky under navbar) */}
+        <form
+          action="/browse"
+          method="GET"
+          className="md:hidden mb-4 sticky z-30 -mx-4 px-4 top-3 bg-white/90 backdrop-blur supports-[backdrop-filter]:bg-white/80"
+        >
           <label className="sr-only" htmlFor="browse-q">Search</label>
           <div className="relative">
             <input
