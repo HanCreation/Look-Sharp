@@ -107,8 +107,29 @@ export default function Footer() {
         <div className="mt-8 pt-6 border-t border-gray-200/50">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <p className="text-xs text-gray-500">❤️ Coded and Created by Han 2025 for the Nano Banana Hackathon</p>
-            <div className="flex items-center gap-4">
+            <div className="flex items-center flex-wrap gap-4">
               <span className="text-xs text-gray-400">© 2025 @HanCreation x PutraGPT</span>
+              <div className="flex items-center gap-3">
+                <a
+                  href="https://github.com/HanCreation"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs text-gray-600 hover:text-brand transition-colors"
+                  aria-label="HanCreation on GitHub"
+                >
+                  GitHub
+                </a>
+                <span className="text-gray-300">•</span>
+                <a
+                  href="https://dhans.vercel.app"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs text-gray-600 hover:text-brand transition-colors"
+                  aria-label="Han's website"
+                >
+                  dhans.vercel.app
+                </a>
+              </div>
               <div className="flex items-center gap-2">
                 <div className="w-1.5 h-1.5 rounded-full bg-gradient-to-r from-brand to-blue-500"></div>
                 <span className="text-xs text-gray-500">Powered by Google AI Studio</span>
@@ -120,4 +141,3 @@ export default function Footer() {
     </footer>
   );
 }
-
