@@ -6,6 +6,9 @@ import Footer from './components/Footer';
 export const metadata = {
   title: 'LookSharp',
   description: 'AI glasses <try-></try->on and product browser',
+  icons: {
+    icon: '/thumb.png',
+  },
 };
 
 export default function RootLayout({ children }: { readonly children: ReactNode }) {

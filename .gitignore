@@ -6,3 +6,5 @@
 /.data
 /public/assets/glasses
 /.seed_data
+/.vercel
+*.log

@@ -129,6 +129,16 @@ export default function Footer() {
                 >
                   Visit my personal Website
                 </a>
+                <span className="text-gray-300">•</span>
+                <a
+                  href="https://x.com/Putra_GPT"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs text-gray-600 hover:text-brand transition-colors"
+                  aria-label="Putra GPT on X"
+                >
+                  PutraGPT's X
+                </a>
               </div>
               <div className="flex items-center gap-2">
                 <div className="w-1.5 h-1.5 rounded-full bg-gradient-to-r from-brand to-blue-500"></div>
