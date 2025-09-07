@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS public.glasses (
   shape TEXT,
   glasses_shape TEXT,
   color TEXT,
+  sex TEXT CHECK (sex IN ('men','women','unisex')) DEFAULT 'unisex',
   frame_width_mm INT,
   lens_height_mm INT,
   price_cents INT,
@@ -42,4 +43,3 @@ CREATE TABLE IF NOT EXISTS public.leads (
   note TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
-

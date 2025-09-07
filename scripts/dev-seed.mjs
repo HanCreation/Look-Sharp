@@ -17,6 +17,7 @@ db.exec(`
     shape TEXT,
     glasses_shape TEXT,
     color TEXT,
+    sex TEXT,
     frame_width_mm INTEGER,
     lens_height_mm INTEGER,
     price_cents INTEGER,
@@ -48,13 +49,20 @@ db.exec(`
   );
 `);
 
+// Migration: add sex column if missing
+try {
+  const cols = db.prepare('PRAGMA table_info(glasses)').all();
+  const hasSex = cols.some((c) => c.name === 'sex');
+  if (!hasSex) db.exec(`ALTER TABLE glasses ADD COLUMN sex TEXT`);
+} catch {}
+
 const now = new Date().toISOString();
 
 function upsertGlasses(g) {
   const exists = db.prepare('SELECT 1 FROM glasses WHERE id = ?').get(g.id);
   if (exists) return;
-  db.prepare(`INSERT INTO glasses (id, sku, name, brand, style, shape, glasses_shape, color, frame_width_mm, lens_height_mm, price_cents, tags, created_at, updated_at)
-              VALUES (@id,@sku,@name,@brand,@style,@shape,@glasses_shape,@color,@frame_width_mm,@lens_height_mm,@price_cents,@tags,@created_at,@updated_at)`)
+  db.prepare(`INSERT INTO glasses (id, sku, name, brand, style, shape, glasses_shape, color, sex, frame_width_mm, lens_height_mm, price_cents, tags, created_at, updated_at)
+              VALUES (@id,@sku,@name,@brand,@style,@shape,@glasses_shape,@color,@sex,@frame_width_mm,@lens_height_mm,@price_cents,@tags,@created_at,@updated_at)`)
     .run({ ...g, tags: g.tags ? JSON.stringify(g.tags) : null });
 }
 
@@ -75,6 +83,7 @@ upsertGlasses({
   shape: 'aviator',
   glasses_shape: 'aviator',
   color: 'gold',
+  sex: 'unisex',
   frame_width_mm: 140,
   lens_height_mm: 48,
   price_cents: 12900,
@@ -109,4 +118,3 @@ upsertAsset({
 });
 
 console.log('Seed complete:', dbPath);
-

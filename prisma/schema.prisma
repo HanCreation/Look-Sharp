@@ -7,6 +7,12 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum GlassesSex {
+  men
+  women
+  unisex
+}
+
 model Glasses {
   id              String       @id @db.Uuid @map("id")
   sku             String       @unique
@@ -16,6 +22,7 @@ model Glasses {
   shape           String?      @db.Text
   glassesShape    String?      @map("glasses_shape") @db.Text
   color           String?      @db.Text
+  sex             GlassesSex   @default(unisex)
   frameWidthMm    Int?         @map("frame_width_mm")
   lensHeightMm    Int?         @map("lens_height_mm")
   priceCents      Int?         @map("price_cents")
@@ -61,4 +68,3 @@ model Lead {
 
   @@map("leads")
 }
-

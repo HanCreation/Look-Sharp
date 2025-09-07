@@ -11,6 +11,7 @@
     "db:seed": "node scripts/dev-seed.mjs",
     "db:reset": "node scripts/dev-reset.mjs",
     "db:seed:pg": "node scripts/pg-seed.mjs",
+    "db:seed:images": "node scripts/seed-from-images.mjs",
     "postinstall": "prisma generate",
     "prisma:generate": "prisma generate",
     "prisma:studio": "prisma studio",

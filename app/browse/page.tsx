@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { headers } from 'next/headers';
 
 type SearchParams = Readonly<{
   q?: string;
@@ -30,8 +31,13 @@ async function getData(searchParams: SearchParams) {
     params.set('page', String(Number(searchParams.page || '1')));
     params.set('limit', '12');
 
-    // Use relative URL for internal API calls in Next.js
-    const res = await fetch(`/api/glasses?${params.toString()}`, {
+    // In Node runtime, fetch needs an absolute URL. Build one from headers/env.
+    const hdrs = headers();
+    const host = hdrs.get('x-forwarded-host') || hdrs.get('host') || process.env.VERCEL_URL;
+    const proto = hdrs.get('x-forwarded-proto') || (process.env.VERCEL ? 'https' : 'http');
+    const base = process.env.NEXT_PUBLIC_APP_URL || (host ? `${proto}://${host}` : 'http://localhost:3000');
+    const res = await fetch(`${base}/api/glasses?${params.toString()}`,
+    {
       cache: 'no-store',
     });
 
@@ -57,7 +63,7 @@ export default async function Browse({ searchParams }: { readonly searchParams: 
     { label: 'All', value: '' },
     { label: 'Aviator', value: 'aviator' },
     { label: 'Round', value: 'round' },
-    { label: 'Rectangular', value: 'rectangular' },
+    { label: 'Rectangular', value: 'rectangle' },
   ];
 
   function buildHref(params: Partial<SearchParams>) {
@@ -192,4 +198,3 @@ export default async function Browse({ searchParams }: { readonly searchParams: 
     </section>
   );
 }
-

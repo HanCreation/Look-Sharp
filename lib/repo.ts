@@ -14,6 +14,7 @@ export type Glasses = {
   shape: string | null;
   glasses_shape: string | null;
   color: string | null;
+  sex: 'men' | 'women' | 'unisex' | null;
   frame_width_mm: number | null;
   lens_height_mm: number | null;
   price_cents: number | null;
@@ -85,6 +86,7 @@ function ensureSqliteSchema(db: any) {
       shape TEXT,
       glasses_shape TEXT,
       color TEXT,
+      sex TEXT,
       frame_width_mm INTEGER,
       lens_height_mm INTEGER,
       price_cents INTEGER,
@@ -131,6 +133,17 @@ function ensureSqliteSchema(db: any) {
       created_at TEXT NOT NULL
     );
   `);
+
+  // Migration: add sex column to glasses if missing
+  try {
+    const cols = db.prepare('PRAGMA table_info(glasses)').all() as Array<{ name: string }>;
+    const hasSex = cols.some((c) => c.name === 'sex');
+    if (!hasSex) {
+      db.exec(`ALTER TABLE glasses ADD COLUMN sex TEXT`);
+    }
+  } catch (_e) {
+    // best-effort; ignore
+  }
 }
 
 function makeSqliteRepo(): Repo {
@@ -162,6 +175,7 @@ function makeSqliteRepo(): Repo {
       `).all(...params, limit, offset) as any[];
       const items: Glasses[] = itemsRaw.map(r => ({
         ...r,
+        sex: (r.sex as any) ?? null,
         tags: r.tags ? (JSON.parse(r.tags) as string[]) : null,
       }));
       return { items, total };
@@ -169,7 +183,7 @@ function makeSqliteRepo(): Repo {
     async getGlassesById(id: string) {
       const r = db.prepare('SELECT * FROM glasses WHERE id = ?').get(id) as any | undefined;
       if (!r) return null;
-      const glasses: Glasses = { ...r, tags: r.tags ? JSON.parse(r.tags) : null, cover_cdn_url: null };
+      const glasses: Glasses = { ...r, sex: (r.sex as any) ?? null, tags: r.tags ? JSON.parse(r.tags) : null, cover_cdn_url: null };
       const assets = db.prepare('SELECT * FROM media_assets WHERE glasses_id = ? ORDER BY sort_order, created_at').all(id) as any[];
       return { glasses, assets } as any;
     },
@@ -256,6 +270,7 @@ function makePostgresRepo(): Repo {
         shape: g.shape,
         glasses_shape: g.glassesShape,
         color: g.color,
+        sex: (g.sex as any) ?? 'unisex',
         frame_width_mm: g.frameWidthMm,
         lens_height_mm: g.lensHeightMm,
         price_cents: g.priceCents,
@@ -283,6 +298,7 @@ function makePostgresRepo(): Repo {
         shape: g.shape,
         glasses_shape: g.glassesShape,
         color: g.color,
+        sex: (g.sex as any) ?? 'unisex',
         frame_width_mm: g.frameWidthMm,
         lens_height_mm: g.lensHeightMm,
         price_cents: g.priceCents,
@@ -371,7 +387,16 @@ function makePostgresRepo(): Repo {
 }
 
 export async function getRepo(): Promise<Repo> {
-  const url = process.env.DATABASE_URL || '';
+  // Allow explicit override for local development
+  if (String(process.env.FORCE_SQLITE || '').toLowerCase() === 'true' || process.env.FORCE_SQLITE === '1') {
+    return makeSqliteRepo();
+  }
+  const url =
+    process.env.POSTGRES_PRISMA_URL ||
+    process.env.DATABASE_URL ||
+    process.env.POSTGRES_URL ||
+    process.env.POSTGRES_URL_NON_POOLING ||
+    '';
   if (url.startsWith('postgres://') || url.startsWith('postgresql://')) {
     return makePostgresRepo();
   }

@@ -29,6 +29,7 @@ async function main() {
       shape: 'aviator',
       glassesShape: 'aviator',
       color: 'gold',
+      sex: 'unisex',
       frameWidthMm: 140,
       lensHeightMm: 48,
       priceCents: 12900,
