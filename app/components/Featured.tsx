@@ -1,14 +1,22 @@
 import Link from "next/link";
 import { getRepo } from "@/lib/repo";
+import { readFeaturedFromEdgeConfig, type FeaturedItem } from "@/lib/edge-config";
 
 export default async function Featured() {
-  let items: Array<{ id: string; name: string; brand: string; cover_cdn_url: string | null }>;
-  try {
-    const repo = await getRepo();
-    const res = await repo.listGlasses({ page: 1, limit: 15 } as any);
-    items = (res.items || []).map((g: any) => ({ id: g.id, name: g.name, brand: g.brand, cover_cdn_url: g.cover_cdn_url }));
-  } catch {
-    items = [];
+  let items: FeaturedItem[] = [];
+  // Prefer Edge Config to avoid DB reads on the homepage
+  const fromEdge = await readFeaturedFromEdgeConfig();
+  if (fromEdge && fromEdge.length > 0) {
+    items = fromEdge;
+  } else {
+    // Fallback to DB if Edge Config is not set yet
+    try {
+      const repo = await getRepo();
+      const res = await repo.listGlasses({ page: 1, limit: 15 } as any);
+      items = (res.items || []).map((g: any) => ({ id: g.id, name: g.name, brand: g.brand, cover_cdn_url: g.cover_cdn_url }));
+    } catch {
+      items = [];
+    }
   }
   const row = items.length > 0 ? items : [];
   return (
@@ -60,5 +68,4 @@ function Card({ id, brand, name, cover }: { readonly id: string; readonly brand:
     </Link>
   );
 }
-
 

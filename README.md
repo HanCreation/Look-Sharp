@@ -1,6 +1,30 @@
 # Look-Sharp
 Nano Banana 🍌 powered webapp to try out glasses. So, you can look sharp and your look is sharp
 
+## Homepage Carousel: Edge Config
+
+The homepage product carousel now prefers Vercel Edge Config to avoid database reads on every request.
+
+- Package: `@vercel/edge-config`
+- Key: `featured_glasses`
+- Behavior: Reads this key for an array of featured items. If missing/unavailable, falls back to the database (Supabase/Postgres via Prisma).
+
+Environment variables:
+- `EDGE_CONFIG` – Read connection string (provided by Vercel integration)
+- Optional (for write/sync support):
+  - `EDGE_CONFIG_ID` – Edge Config ID
+  - `VERCEL_API_TOKEN` – Vercel API token with access to the config
+  - `VERCEL_TEAM_ID` – Team ID (optional if token is already scoped)
+  - `ADMIN_TOKEN` – Secret used to protect the sync endpoint
+
+Sync endpoint (admin only):
+- `POST /api/admin/edge-config/sync-featured` with header `Authorization: Bearer <ADMIN_TOKEN>` (or `?token=<ADMIN_TOKEN>`)
+- Reads top 15 products from the DB and upserts `featured_glasses` in Edge Config.
+
+Recommended Supabase sync:
+- Create a database webhook (insert/update/delete on `glasses`/`media_assets`) that calls the sync endpoint.
+- Alternatively, schedule a periodic Vercel Cron job to call the endpoint.
+
 ## Image-Based Seeding
 
 You can seed the database from PNG images placed under `./.seed_data`.

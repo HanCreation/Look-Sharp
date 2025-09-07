@@ -1,7 +1,6 @@
 import Hero from './components/Hero';
 import QuickTryOn from './components/QuickTryOn';
 import Featured from './components/Featured';
-import HowItWorks from './components/HowItWorks';
 import Link from 'next/link';
 
 // Cache the homepage (including the product carousel) on the CDN
