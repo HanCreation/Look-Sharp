@@ -62,6 +62,9 @@ export type ListParams = {
   shape?: string;
   page: number;
   limit: number;
+  // Optimization: allow callers (e.g., homepage Featured) to skip expensive COUNT(*)
+  // When true, implementations should avoid total counts and may return items.length for total.
+  skipCount?: boolean;
 };
 
 export type Repo = {
@@ -154,7 +157,7 @@ function makeSqliteRepo(): Repo {
   ensureSqliteSchema(db);
 
   return {
-    async listGlasses({ query, brand, style, shape, page, limit }) {
+    async listGlasses({ query, brand, style, shape, page, limit, skipCount }) {
       const where: string[] = [];
       const params: any[] = [];
       if (query) { where.push('(name LIKE ? OR brand LIKE ? OR sku LIKE ?)'); params.push(`%${query}%`,`%${query}%`,`%${query}%`); }
@@ -162,7 +165,9 @@ function makeSqliteRepo(): Repo {
       if (style) { where.push('style = ?'); params.push(style); }
       if (shape) { where.push('shape = ?'); params.push(shape); }
       const whereSql = where.length ? `WHERE ${where.join(' AND ')}` : '';
-      const total = db.prepare(`SELECT COUNT(*) as c FROM glasses ${whereSql}`).get(...params).c as number;
+      const total = skipCount
+        ? 0
+        : (db.prepare(`SELECT COUNT(*) as c FROM glasses ${whereSql}`).get(...params).c as number);
       const offset = (page - 1) * limit;
       const itemsRaw = db.prepare(`
         SELECT g.*, (
@@ -178,7 +183,7 @@ function makeSqliteRepo(): Repo {
         sex: (r.sex as any) ?? null,
         tags: r.tags ? (JSON.parse(r.tags) as string[]) : null,
       }));
-      return { items, total };
+      return { items, total: skipCount ? items.length : total };
     },
     async getGlassesById(id: string) {
       const r = db.prepare('SELECT * FROM glasses WHERE id = ?').get(id) as any | undefined;
@@ -232,7 +237,7 @@ function makeSqliteRepo(): Repo {
 
 function makePostgresRepo(): Repo {
   return {
-    async listGlasses({ query, brand, style, shape, page, limit }) {
+    async listGlasses({ query, brand, style, shape, page, limit, skipCount }) {
       const where: any = {};
       if (query) {
         where.OR = [
@@ -245,7 +250,7 @@ function makePostgresRepo(): Repo {
       if (style) where.style = style;
       if (shape) where.shape = shape;
 
-      const total = await prisma.glasses.count({ where });
+      const total = skipCount ? 0 : await prisma.glasses.count({ where });
 
       const itemsRaw = await prisma.glasses.findMany({
         where,
@@ -279,7 +284,7 @@ function makePostgresRepo(): Repo {
         updated_at: g.updatedAt.toISOString(),
         cover_cdn_url: g.assets?.[0]?.cdnUrl ?? null,
       }));
-      return { items, total };
+      return { items, total: skipCount ? items.length : total };
     },
     async getGlassesById(id: string) {
       const g = await prisma.glasses.findUnique({

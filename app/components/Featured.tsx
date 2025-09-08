@@ -13,17 +13,20 @@ export default async function Featured() {
     // Fallback to DB if Edge Config is not set yet
     try {
       const repo = await getRepo();
-      const res = await repo.listGlasses({ page: 1, limit: 15 } as any);
+      const res = await repo.listGlasses({ page: 1, limit: 15, skipCount: true } as any);
       items = (res.items || []).map((g: any) => ({ id: g.id, name: g.name, brand: g.brand, cover_cdn_url: g.cover_cdn_url ?? null }));
       console.log("Featured items from DB");
       // If Edge Config write credentials are configured, backfill Edge Config with fresh data
       try {
-        if (process.env.EDGE_CONFIG_ID && process.env.VERCEL_API_TOKEN && items.length > 0) {
+        if (process.env.EDGE_CONFIG && process.env.VERCEL_API_TOKEN && items.length > 0) {
+          console.log("Writing featured items to Edge Config...");
           await writeFeaturedToEdgeConfig(items);
           console.log("Featured items written to Edge Config");
         }
-      } catch {
-        // Ignore write errors during fallback
+      } catch (err) {
+        // Ignore write errors during fallback, but log details for debugging
+        console.log("Failed to write featured items to Edge Config");
+        console.error(err);
       }
     } catch {
       items = [];

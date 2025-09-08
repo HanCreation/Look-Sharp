@@ -58,6 +58,14 @@ CSV headers are flexible; these are recognized (case‑insensitive):
 - Inspect data: `npm run prisma:studio` (tables `glasses`, `media_assets`, `leads`)
 - Run app: `npm run dev`
 
+## Featured Carousel (Vercel Edge Config)
+
+- Read config: set `EDGE_CONFIG` to the Edge Config connection string (Vercel provides it in the Edge Config UI). The homepage will try to read key `featured_glasses`.
+- Write config (optional): to auto‑populate Edge Config from your DB, set:
+  - `EDGE_CONFIG` — the Edge Config ID (e.g., `ecfg_...`).
+  - `VERCEL_API_TOKEN` — a Vercel API token with access to the project/team.
+  - After these are set, the homepage will backfill the `featured_glasses` key (logs show “Writing featured items to Edge Config…” when active).
+
 ## Notes
 
 - Featured carousel via Vercel Edge Config is supported. If enabling, see `lib/edge-config.ts` and `app/api/admin/edge-config/sync-featured/route.ts` for the admin sync endpoint and required env vars.
