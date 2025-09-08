@@ -666,7 +666,7 @@ async function aiInferMetadata(imagePath, fallbackMeta) {
   if (!GoogleGenAI) {
     ({ GoogleGenAI } = await import('@google/genai'));
   }
-  const modelId = process.env.GEMINI_MODEL_ID || 'gemini-2.5-flash-image-preview';
+  const modelId = process.env.GEMINI_MODEL_ID || 'gemini-2.5-flash';
   const ai = new GoogleGenAI({ apiKey });
   const bytes = fs.readFileSync(imagePath);
 

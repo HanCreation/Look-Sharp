@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { getRepo } from "@/lib/repo";
-import { readFeaturedFromEdgeConfig, type FeaturedItem } from "@/lib/edge-config";
+import { readFeaturedFromEdgeConfig, writeFeaturedToEdgeConfig, type FeaturedItem } from "@/lib/edge-config";
 
 export default async function Featured() {
   let items: FeaturedItem[] = [];
@@ -8,12 +8,23 @@ export default async function Featured() {
   const fromEdge = await readFeaturedFromEdgeConfig();
   if (fromEdge && fromEdge.length > 0) {
     items = fromEdge;
+    console.log("Featured items from Edge Config");
   } else {
     // Fallback to DB if Edge Config is not set yet
     try {
       const repo = await getRepo();
       const res = await repo.listGlasses({ page: 1, limit: 15 } as any);
-      items = (res.items || []).map((g: any) => ({ id: g.id, name: g.name, brand: g.brand, cover_cdn_url: g.cover_cdn_url }));
+      items = (res.items || []).map((g: any) => ({ id: g.id, name: g.name, brand: g.brand, cover_cdn_url: g.cover_cdn_url ?? null }));
+      console.log("Featured items from DB");
+      // If Edge Config write credentials are configured, backfill Edge Config with fresh data
+      try {
+        if (process.env.EDGE_CONFIG_ID && process.env.VERCEL_API_TOKEN && items.length > 0) {
+          await writeFeaturedToEdgeConfig(items);
+          console.log("Featured items written to Edge Config");
+        }
+      } catch {
+        // Ignore write errors during fallback
+      }
     } catch {
       items = [];
     }
@@ -49,7 +60,7 @@ function Card({ id, brand, name, cover }: { readonly id: string; readonly brand:
   return (
     <Link
       href={`/glasses/${id}`}
-      className="relative mr-3 sm:mr-5 inline-flex w-[72vw] sm:w-[260px] flex-shrink-0 overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm ring-1 ring-gray-200/60 transition hover:shadow-md hover:ring-gray-300"
+      className="relative mr-3 sm:mr-5 inline-flex flex-col w-[72vw] sm:w-[260px] flex-shrink-0 overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm ring-1 ring-gray-200/60 transition hover:shadow-md hover:ring-gray-300"
     >
       <div className="relative aspect-[4/3] w-full bg-gray-50">
         {cover ? (
