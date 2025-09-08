@@ -42,8 +42,8 @@ export default function Hero() {
                 Try it now
               </a>
             </div>
-            <ul className="mt-6 flex flex-wrap gap-x-6 gap-y-2 text-sm text-gray-600">
-              <li className="flex items-center gap-2"><CheckIcon /> No selfie stored</li>
+            <ul className="mt-6 flex flex-wrap gap-x-6 gap-y-2 text-md text-gray-600">
+              <li className="flex items-center gap-2"><CheckIcon /> <b>No selfie stored in our server</b></li>
               <li className="flex items-center gap-2"><CheckIcon /> Free to try</li>
             </ul>
           </div>
