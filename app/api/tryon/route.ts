@@ -104,7 +104,7 @@ export async function POST(req: Request) {
 
     const selfieBytes = Buffer.from(await file.arrayBuffer());
 
-    const prompt = `Edit the provided image to make the person's wear the glasses provided in other image. Make sure you retain all the same elements and detail in the original image except you edit/add new glasses to the face. Preserve the background, clothes, and other elements in the original image + Preserve the glasses' brand color, frame shape. Do not add text or watermarks.\n\nComposite these glasses naturally onto the face: align to eye centers, scale to typical PD (62mm ±10%), respect head tilt ±15°. Output a single 1024x1024 PNG. No extra artifacts.`;
+    const prompt = `Edit the provided image to make the person's wear the glasses provided in other image. Make sure you retain all the same elements and detail in the original image except you edit/add new glasses to the face. Preserve the background, clothes, and other elements in the original image + Preserve the glasses' brand color, frame shape. Do not add text or watermarks.\n\nComposite these glasses naturally onto the face: align to eye centers, scale to typical PD (62mm ±10%), respect head tilt ±15°. Output a single PNG. No extra artifacts.`;
     
     const started = Date.now();
     const { imageBase64, modelId } = await generateTryOn({
