@@ -57,9 +57,19 @@ export default function TryOnPanel({ glasses, referenceUrl }: Props) {
         body: form,
         headers: userKey ? { "x-gemini-api-key": userKey } : undefined,
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data?.error || "Failed to generate");
-      const b64 = data.imageBase64 as string;
+      const data = await (async () => {
+        try { return await res.clone().json(); } catch { return null; }
+      })();
+      if (!res.ok) {
+        let rawText = "";
+        if (!data) {
+          try { rawText = await res.text(); } catch {}
+        }
+        const tooLarge = res.status === 413 || /Request Entity Too Large/i.test(rawText);
+        const message = (data && data.error) || (tooLarge ? `File too large. Max ${MAX_UPLOAD_MB}MB` : (rawText ? rawText.slice(0, 300) : "Failed to generate"));
+        throw new Error(message);
+      }
+      const b64 = (data && data.imageBase64) as string;
       const dataUrl = `data:image/png;base64,${b64}`;
       setResult(dataUrl);
 

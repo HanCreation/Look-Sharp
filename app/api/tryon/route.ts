@@ -119,7 +119,53 @@ export async function POST(req: Request) {
     res.headers.set('Cache-Control', 'no-store');
     return res;
   } catch (err: any) {
-    console.error('tryon error', err?.message || err);
-    return NextResponse.json({ error: 'Failed to generate image' }, { status: 502 });
+    const { status, message } = normalizeTryOnError(err);
+    console.error('tryon error', message);
+    const res = NextResponse.json({ error: message }, { status });
+    res.headers.set('Cache-Control', 'no-store');
+    return res;
   }
+}
+
+function normalizeTryOnError(err: any): { status: number; message: string } {
+  const fallback = { status: 502, message: 'Failed to generate image' };
+  if (!err) return fallback;
+  const raw = String(err?.message || err || '').trim();
+  const lower = raw.toLowerCase();
+
+  // Size-related
+  if (lower.includes('request entity too large') || lower.includes('payload too large')) {
+    return { status: 413, message: `File too large. Max ${MAX_UPLOAD_MB}MB` };
+  }
+
+  // Missing or invalid API key
+  if (lower.includes('missing gemini_api_key') || lower.includes('missing gemini api key')) {
+    return { status: 401, message: 'Missing Gemini API key' };
+  }
+  if (lower.includes('invalid api key') || lower.includes('permission')) {
+    return { status: 401, message: 'Invalid or unauthorized API key' };
+  }
+
+  // Rate limit / quota
+  if (lower.includes('quota') || lower.includes('rate limit') || lower.includes('429')) {
+    return { status: 429, message: 'Rate limit exceeded. Please try again later.' };
+  }
+
+  // Reference asset fetch errors encoded earlier
+  const fetchMatch = /fetch_failed_(\d{3})/.exec(raw);
+  if (fetchMatch) {
+    const code = Number(fetchMatch[1]);
+    const msg = code === 404 ? 'Reference image not found' : 'Failed to load reference image';
+    return { status: code, message: msg };
+  }
+
+  // Model produced no image
+  if (lower.includes('no image produced')) {
+    return { status: 502, message: 'The AI did not return an image. Please try again.' };
+  }
+
+  // If upstream SDK exposes a status
+  const status = Number((err?.status || err?.response?.status || 0)) || 502;
+  const message = raw || fallback.message;
+  return { status, message };
 }
