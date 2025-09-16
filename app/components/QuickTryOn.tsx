@@ -61,8 +61,28 @@ export default function QuickTryOn() {
         body: form,
         headers: userKey ? { "x-gemini-api-key": userKey } : undefined,
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data?.error || "Failed to generate");
+      const contentType = res.headers.get('content-type') || '';
+      const raw = await res.text();
+      let data: any = null;
+      if (contentType.includes('application/json')) {
+        try { data = JSON.parse(raw); } catch {}
+      } else {
+        try { data = JSON.parse(raw); } catch { data = null; }
+      }
+      if (!res.ok) {
+        const friendly = (() => {
+          const body = (raw || '').trim();
+          if (res.status === 413 || /entity too large/i.test(body)) return `File too large. Max ${MAX_UPLOAD_MB}MB`;
+          if (res.status === 415 || /unsupported media|content[- ]type/i.test(body)) return 'Only JPEG or PNG supported';
+          if (res.status === 429) return 'Too many requests. Try again soon.';
+          if (res.status === 502 || /bad gateway|upstream|service unavailable/i.test(body)) return 'AI service is unavailable. Try again shortly.';
+          return data?.error || (body && body.length < 200 ? body : 'Failed to generate');
+        })();
+        throw new Error(friendly);
+      }
+      if (!data || typeof data.imageBase64 !== 'string') {
+        throw new Error('Unexpected response from server');
+      }
       const b64 = data.imageBase64 as string;
       const dataUrl = `data:image/png;base64,${b64}`;
       setResult(dataUrl);
