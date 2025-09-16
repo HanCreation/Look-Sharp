@@ -61,7 +61,16 @@ export default function QuickTryOn() {
         body: form,
         headers: userKey ? { "x-gemini-api-key": userKey } : undefined,
       });
-      const data = await res.json();
+      
+      let data;
+      try {
+        data = await res.json();
+      } catch (jsonError) {
+        // If response is not JSON, try to get text for better error message
+        const text = await res.text().catch(() => 'Unknown error');
+        throw new Error(`Server error: ${text}`);
+      }
+      
       if (!res.ok) throw new Error(data?.error || "Failed to generate");
       const b64 = data.imageBase64 as string;
       const dataUrl = `data:image/png;base64,${b64}`;

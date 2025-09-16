@@ -38,7 +38,14 @@ export async function generateTryOn(args: {
   };
 
   // Use non-streaming call for reliability; extract inline image data.
-  const res: any = await ai.models.generateContent({ model: modelId, contents, config });
+  let res: any;
+  try {
+    res = await ai.models.generateContent({ model: modelId, contents, config });
+  } catch (error: any) {
+    // Handle API errors more gracefully
+    const errorMessage = error?.message || error?.toString() || 'AI model request failed';
+    throw new Error(`AI generation failed: ${errorMessage}`);
+  }
 
   // Different SDK builds can surface results on res.output or res.candidates.
   const candidates = (res?.candidates ?? res?.output ?? []) as any[];
