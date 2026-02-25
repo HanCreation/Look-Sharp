@@ -18,7 +18,7 @@
     "prisma:push": "prisma db push"
   },
   "engines": {
-    "node": ">=18.18.0"
+    "node": "20.x"
   },
   "dependencies": {
     "@google/genai": "^1.17.0",

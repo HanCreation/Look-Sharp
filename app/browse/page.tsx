@@ -1,6 +1,8 @@
 import Link from 'next/link';
 import { getRepo } from '@/lib/repo';
 
+export const dynamic = 'force-dynamic';
+
 type SearchParams = Readonly<{
   q?: string;
   brand?: string;
